@@ -1,5 +1,5 @@
 // Establish WebSocket to signaling server
-var connection = new WebSocket("ws://localhost:9090");
+var webSocket = new WebSocket("ws://localhost:9090");
 
 var username = "";
 
@@ -64,7 +64,7 @@ sendBtn.addEventListener("click", (event) => {
     }
 });
 
-connection.onmessage = (message) => {
+webSocket.onmessage = (message) => {
     console.log("Received message: " + message.data);
 
     // Parse message data to JS object
@@ -143,11 +143,11 @@ function onCandidate(candidate) {
     myConnection.addIceCandidate(new RTCIceCandidate(candidate));
 }
 
-connection.onopen = () => {
+webSocket.onopen = () => {
     console.log("Connected");
 };
 
-connection.onerror = (error) => {
+webSocket.onerror = (error) => {
     console.log("Got error: " + error)
 };
 
@@ -174,5 +174,5 @@ function send(message) {
     if (connectedUser) {
         message.name = connectedUser;
     }
-    connection.send(JSON.stringify(message));
+    webSocket.send(JSON.stringify(message));
 }

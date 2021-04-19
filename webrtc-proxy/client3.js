@@ -8,9 +8,6 @@ var username = "";
 var loginInput = document.getElementById("loginInput");
 var loginBtn = document.getElementById("loginBtn");
 
-var calleeInput = document.getElementById("calleeInput");
-var callBtn = document.getElementById("callBtn");
-
 var msgInput = document.getElementById("msgInput");
 var sendBtn = document.getElementById("sendBtn");
 
@@ -53,15 +50,32 @@ loginBtn.addEventListener("click", (event) => {
     }
 });
 
+// KeyUp listener for loginInput
+loginInput.addEventListener("keyup", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        loginBtn.click();
+    }
+});
+
 sendBtn.addEventListener("click", (event) => {
     if (msgInput.value) {
         var msg = msgInput.value;
         console.log("Sending chat message: " + msg);
-        // Send message to WebSocket
+        // Send message to proxy server
         send({
             type: "chat",
             message: msg
         });
+        msgInput.value = "";
+    }
+});
+
+// KeyUp listener for msgInput
+msgInput.addEventListener("keyup", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendBtn.click();
     }
 });
 
