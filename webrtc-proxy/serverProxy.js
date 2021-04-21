@@ -1,7 +1,7 @@
 var WebSocketServer = require('ws').Server;
 
-const port = 9090;
-// Create WebSocket server at port 9090
+const port = 8074;
+// Create WebSocket server at port var
 var server = new WebSocketServer({ port: port });
 
 console.log("Proxy server live at port " + port);
@@ -12,8 +12,6 @@ server.on('connection', (connection) => {
     console.log("Connection received");
 
     connection.on('message', (message) => {
-        console.log("Message recieved: " + message);
-
         var data;
         // Filter non-JSON messages
         try {
@@ -21,6 +19,11 @@ server.on('connection', (connection) => {
         } catch (e) {
             console.log("Invalid JSON");
             data = {};
+        }
+
+        // Offers and answers flood the console, exclude them
+        if (data.type !== "offer" && data.type !== "answer") {
+            console.log("Message received: " + message);
         }
 
         switch (data.type) {
@@ -45,10 +48,27 @@ server.on('connection', (connection) => {
 
             case "chat":
                 console.log("Chat received: " + data.name + ": " + data.message);
-                // Redirect chat message to all users
+                // Relay chat message to all users
                 for (user in users) {
                     sendTo(users[user], data);
                 }
+                break;
+
+            case "offer":
+                console.log("Offer received from: " + data.name);
+                // Relay offer to all other users
+                for (user in users) {
+                    // Don't send to sender
+                    if (users[user].name !== data.name) {
+                        sendTo(users[user], data);
+                    }
+                }
+                break;
+
+            case "answer":
+                console.log("Answer received from: " + data.name + " answering to: " + data.recipient);
+                // Relay answer to intended recipient
+                sendTo(users[data.recipient], data);
                 break;
 
             default:
