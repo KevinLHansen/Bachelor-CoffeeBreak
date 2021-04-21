@@ -1,14 +1,25 @@
-var WebSocketServer = require('ws').Server;
+const fs = require('fs');
+const WebSocketServer = require('ws').Server;
+const HttpsServer = require('https').createServer;
 
 const port = 8074;
-// Create WebSocket server at port var
-var server = new WebSocketServer({ port: port });
+
+const conf = {
+    key: fs.readFileSync('cert/key.pem'),
+    cert: fs.readFileSync('cert/cert.pem')
+};
+
+var https = HttpsServer(conf);
+
+var wss = new WebSocketServer({ server: https });
+
+https.listen(port);
 
 console.log("Proxy server live at port " + port);
 
 var users = {};
 
-server.on('connection', (connection) => {
+wss.on('connection', (connection) => {
     console.log("Connection received");
 
     connection.on('message', (message) => {
