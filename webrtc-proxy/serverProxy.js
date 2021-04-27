@@ -15,7 +15,7 @@ var wss = new WebSocketServer({ server: https });
 
 https.listen(port);
 
-console.log("Proxy server live at port " + port);
+console.log(`Webserver live at https://localhost:${port}`);
 
 var users = {};
 
