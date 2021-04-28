@@ -1,16 +1,18 @@
 {
-  "name": "coffeebreak",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "dependencies": {
-    "express": "^4.17.1",
-    "ws": "^7.4.4"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC"
+    "name": "coffeebreak",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "dependencies": {
+        "concurrently": "^6.0.2",
+        "express": "^4.17.1",
+        "ws": "^7.4.4"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "concurrently \"node serverWeb\" \"node serverProxy\""
+    },
+    "author": "",
+    "license": "ISC"
 }

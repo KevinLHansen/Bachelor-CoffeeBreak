@@ -89,31 +89,6 @@ canvas.onmousemove = (event) => {
     }
 }
 
-// WASD controls
-var moveSpeed = 10;
-
-window.onkeydown = (event) => {
-
-    if (["ArrowUp", "ArrowLeft", "ArrowDown", "ArrowRight"].includes(event.key)) {
-        event.preventDefault();
-    }
-
-    switch (event.key) {
-        case "ArrowUp":
-            avatar.y -= moveSpeed;
-            break;
-        case "ArrowLeft":
-            avatar.x -= moveSpeed;
-            break;
-        case "ArrowDown":
-            avatar.y += moveSpeed;
-            break;
-        case "ArrowRight":
-            avatar.x += moveSpeed;
-            break;
-    }
-}
-
 function rect(x, y, width, height) {
     context.beginPath();
     context.rect(x, y, width, height);
