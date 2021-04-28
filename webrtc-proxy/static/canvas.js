@@ -12,9 +12,9 @@ var startY;
 
 // Avatars
 var avatars = [];
-avatars.push({ x: 25, y: 75, width: 15, height: 15, fill: "#444444", isDragging: false });
-avatars.push({ x: 50, y: 75, width: 15, height: 15, fill: "#ff0000", isDragging: false });
-avatars.push({ x: 75, y: 75, width: 15, height: 15, fill: "#0800ff", isDragging: false });
+// avatars.push({ x: 25, y: 75, width: 15, height: 15, fill: "#444444", isDragging: false });
+// avatars.push({ x: 50, y: 75, width: 15, height: 15, fill: "#ff0000", isDragging: false });
+// avatars.push({ x: 75, y: 75, width: 15, height: 15, fill: "#0800ff", isDragging: false });
 
 // Render-loop
 function updateCanvasArea() {
@@ -59,6 +59,12 @@ canvas.onmouseup = (event) => {
     dragging = false;
     avatars.forEach((avatar) => {
         avatar.isDragging = false;
+    });
+
+    // Notify server of canvas change
+    send({
+        type: "canvasUpdate",
+        avatars: avatars
     });
 }
 

@@ -18,9 +18,20 @@ https.listen(port);
 console.log(`Proxy server live at https://localhost:${port}`);
 
 var users = {};
+var avatars = [];
+// Avatars population (temporary)
+avatars.push({ x: 25, y: 75, width: 15, height: 15, fill: "#444444", isDragging: false });
+avatars.push({ x: 50, y: 75, width: 15, height: 15, fill: "#ff0000", isDragging: false });
+avatars.push({ x: 75, y: 75, width: 15, height: 15, fill: "#0800ff", isDragging: false });
 
 wss.on('connection', (connection) => {
     console.log("Connection received");
+
+    // Send initial canvas update (temporary)
+    sendTo(connection, {
+        type: "canvasUpdate",
+        avatars: avatars
+    });
 
     connection.on('message', (message) => {
         var data;
@@ -32,15 +43,13 @@ wss.on('connection', (connection) => {
             data = {};
         }
 
-        // Offers and answers flood the console, exclude them
-        if (data.type !== "offer" && data.type !== "answer") {
+        // Exclude types which flood the console
+        if (data.type !== "offer" && data.type !== "answer" && data.type !== "canvasUpdate") {
             console.log("Message received: " + message);
         }
 
         switch (data.type) {
             case "login":
-                console.log("User logged: " + data.name);
-
                 if (users[data.name]) { // Check if user already exists / is logged in
                     sendTo(connection, {
                         type: "login",
@@ -54,6 +63,7 @@ wss.on('connection', (connection) => {
                         type: "login",
                         success: true
                     });
+                    console.log("User logged: " + data.name);
                 }
                 break;
 
@@ -81,6 +91,16 @@ wss.on('connection', (connection) => {
                 // Relay answer to intended recipient
                 sendTo(users[data.recipient], data);
                 break;
+
+            case "canvasUpdate":
+                console.log("Canvas update received from: " + data.name);
+                // Update server avatars
+                avatars = data.avatars;
+                // Relay canvas update to all users
+                for (user in users) {
+                    sendTo(users[user], data);
+                }
+                break
 
             default:
                 sendTo(connection, {

@@ -1,5 +1,3 @@
-// Constants
-
 const serverIP = "localhost"; // for local testing
 //const serverIP = "212.130.120.89"; // for public testing
 const serverPort = "8074";
@@ -40,12 +38,12 @@ loginBtn.addEventListener("click", (event) => {
 
         if (!webSocket) { // Connect WebSocket if not already
             var url = `${serverIP}:${serverPort}`;
-            console.log(`Connecting to WebSocket: ${url}`);
+            console.log(`Client connecting to WebSocket: ${url}`);
             webSocket = new WebSocket(`wss://${url}`);
         }
 
         webSocket.onopen = () => {
-            console.log("WebSocket connected");
+            console.log("Client connected to WebSocket");
             send({
                 type: "login"
             });
@@ -53,12 +51,12 @@ loginBtn.addEventListener("click", (event) => {
         };
 
         webSocket.onmessage = (message) => {
-            // Parse message data JSON
+            // Parse message data from JSON
             var data = JSON.parse(message.data);
 
-            // Offers and answers flood the console, exclude them
-            if (data.type !== "offer" && data.type !== "answer") {
-                console.log("Message received: " + message.data);
+            // Exclude types which flood the console
+            if (data.type !== "offer" && data.type !== "answer" && data.type !== "canvasUpdate") {
+                console.log("Message received: " + message);
             }
 
             switch (data.type) {
@@ -75,6 +73,10 @@ loginBtn.addEventListener("click", (event) => {
                 case "answer":
                     console.log("Answer received from: " + data.name);
                     onAnswer(data.answer);
+                    break;
+                case "canvasUpdate":
+                    console.log("Canvas update received from " + data.name);
+                    onCanvasUpdate(data);
                     break;
             }
         };
@@ -190,6 +192,10 @@ function onOffer(offer, name) {
 
 function onAnswer(answer) {
     localConnection.setRemoteDescription(new RTCSessionDescription(answer));
+}
+
+function onCanvasUpdate(data) {
+    avatars = data.avatars;
 }
 
 // Sends data to WebSocket
