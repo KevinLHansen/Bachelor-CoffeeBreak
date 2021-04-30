@@ -21,7 +21,13 @@ function updateCanvasArea() {
     // Draw rects in list
     avatars.forEach((avatar) => {
         context.fillStyle = avatar.fill;
-        rect(avatar.x, avatar.y, avatar.width, avatar.height);
+        // Highlight own avatar
+        if (avatar.name === username) {
+            rect(avatar.x, avatar.y, avatar.width, avatar.height, true);
+        } else {
+            rect(avatar.x, avatar.y, avatar.width, avatar.height, false);
+        }
+
     });
 
     requestAnimationFrame(updateCanvasArea);
@@ -38,7 +44,7 @@ canvas.onmousedown = (event) => {
 
     // Find mouse-avatar overlap
     avatars.forEach((avatar) => {
-        if (mouseX > avatar.x && mouseX < avatar.x + avatar.width && mouseY > avatar.y && mouseY < avatar.y + avatar.height) {
+        if (isPointInRect(mouseX, mouseY, avatar)) {
             // So user can only drag own avatar
             if (avatar.name === username) {
                 dragging = true;
@@ -107,11 +113,12 @@ canvas.onmousemove = (event) => {
     });
 }
 
-function rect(x, y, width, height) {
+function rect(x, y, width, height, stroke) {
     context.beginPath();
     context.rect(x, y, width, height);
     context.closePath();
     context.fill();
+    if (stroke) { context.stroke(); }
 }
 
 function isPointInRect(x, y, rect) {

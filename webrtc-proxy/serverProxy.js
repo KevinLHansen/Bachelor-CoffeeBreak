@@ -19,10 +19,6 @@ console.log(`Proxy server live at https://localhost:${port}`);
 
 var users = {};
 var avatars = [];
-// Avatars population (temporary)
-// avatars.push({ x: 25, y: 75, width: 15, height: 15, fill: "#444444", isDragging: false });
-// avatars.push({ x: 50, y: 75, width: 15, height: 15, fill: "#ff0000", isDragging: false });
-// avatars.push({ x: 75, y: 75, width: 15, height: 15, fill: "#0800ff", isDragging: false });
 
 wss.on('connection', (connection) => {
     console.log("Connection received");
@@ -126,6 +122,8 @@ wss.on('connection', (connection) => {
 // Avatar functions
 
 function createAvatar(data) {
+    var size = 25;
+
     // Get canvas measurements from data
     var canvasWidth = data.canvas.width;
     var canvasHeight = data.canvas.height;
@@ -138,7 +136,7 @@ function createAvatar(data) {
     // Get random hex color
     var color = Math.floor(Math.random() * 16777215).toString(16);
 
-    avatars.push({ name: data.name, x: x, y: y, width: 15, height: 15, fill: `#${color}`, isDragging: false });
+    avatars.push({ name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false });
 
     sendCanvasUpdate();
 }
