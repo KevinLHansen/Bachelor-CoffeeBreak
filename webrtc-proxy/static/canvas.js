@@ -6,7 +6,8 @@ var offsetX = canvasBounding.left;
 var offsetY = canvasBounding.top;
 
 // Dragging
-var dragging = false;
+var isDragging = false;
+var hasDragged = false;
 var startX;
 var startY;
 
@@ -27,7 +28,6 @@ function updateCanvasArea() {
         } else {
             rect(avatar.x, avatar.y, avatar.width, avatar.height, false);
         }
-
     });
 
     requestAnimationFrame(updateCanvasArea);
@@ -47,7 +47,7 @@ canvas.onmousedown = (event) => {
         if (isPointInRect(mouseX, mouseY, avatar)) {
             // So user can only drag own avatar
             if (avatar.name === username) {
-                dragging = true;
+                isDragging = true;
                 avatar.isDragging = true;
             }
         }
@@ -61,17 +61,20 @@ canvas.onmouseup = (event) => {
     event.preventDefault();
     event.stopPropagation();
 
-    // Reset all dragging-related variables
-    dragging = false;
+    // Reset dragging-related variables
     avatars.forEach((avatar) => {
         avatar.isDragging = false;
     });
+    if (isDragging && hasDragged) {
+        // Notify server of canvas change
+        send({
+            type: "canvasUpdate",
+            avatars: avatars
+        });
+    }
+    isDragging = false;
+    hasDragged = false;
 
-    // Notify server of canvas change
-    send({
-        type: "canvasUpdate",
-        avatars: avatars
-    });
 }
 
 canvas.onmousemove = (event) => {
@@ -80,9 +83,11 @@ canvas.onmousemove = (event) => {
     var mouseY = parseInt(event.clientY - offsetY);
 
     // Dragging
-    if (dragging) {
+    if (isDragging) {
         event.preventDefault();
         event.stopPropagation();
+
+        hasDragged = true;
 
         // Calculate distance moved since last mousemove event
         var deltaX = mouseX - startX;
