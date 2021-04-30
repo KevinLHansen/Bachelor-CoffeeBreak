@@ -45,7 +45,8 @@ loginBtn.addEventListener("click", (event) => {
         webSocket.onopen = () => {
             console.log("Client connected to WebSocket");
             send({
-                type: "login"
+                type: "login",
+                canvas: { width: canvas.width, height: canvas.height }
             });
             console.log("User logged in: " + username);
         };

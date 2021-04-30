@@ -19,10 +19,6 @@ console.log(`Proxy server live at https://localhost:${port}`);
 
 var users = {};
 var avatars = [];
-// Avatars population (temporary)
-avatars.push({ x: 25, y: 75, width: 15, height: 15, fill: "#444444", isDragging: false });
-avatars.push({ x: 50, y: 75, width: 15, height: 15, fill: "#ff0000", isDragging: false });
-avatars.push({ x: 75, y: 75, width: 15, height: 15, fill: "#0800ff", isDragging: false });
 
 wss.on('connection', (connection) => {
     console.log("Connection received");
@@ -63,7 +59,10 @@ wss.on('connection', (connection) => {
                         type: "login",
                         success: true
                     });
+
                     console.log("User logged: " + data.name);
+
+                    createAvatar(data);
                 }
                 break;
 
@@ -114,10 +113,56 @@ wss.on('connection', (connection) => {
     connection.on('close', () => {
         if (connection.name) {
             console.log("User disconnected: " + connection.name);
+            removeAvatar(connection.name);
             delete users[connection.name];
         }
     });
 });
+
+// Avatar functions
+
+function createAvatar(data) {
+    var size = 25;
+
+    // Get canvas measurements from data
+    var canvasWidth = data.canvas.width;
+    var canvasHeight = data.canvas.height;
+
+    var horiMargin = Math.floor(canvasWidth / 3);
+    var vertMargin = Math.floor(canvasHeight / 3);
+    // Get random position for avatar
+    var x = Math.floor(Math.random() * (canvasWidth - horiMargin * 2) + horiMargin);
+    var y = Math.floor(Math.random() * (canvasHeight - vertMargin * 2) + vertMargin);
+    // Get random hex color
+    var color = Math.floor(Math.random() * 16777215).toString(16);
+
+    avatars.push({ name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false });
+
+    sendCanvasUpdate();
+}
+
+function removeAvatar(username) {
+    for (let i = 0; i < avatars.length; i++) {
+        if (avatars[i].name === username) {
+            avatars.splice(i, 1);
+        }
+    }
+
+    sendCanvasUpdate();
+}
+
+// Sends a canvas update to all users
+function sendCanvasUpdate() {
+    for (user in users) {
+        sendTo(users[user], {
+            type: "canvasUpdate",
+            avatars: avatars,
+            name: "SERVER"
+        });
+    }
+}
+
+// Utility functions
 
 function sendTo(connection, message) {
     connection.send(JSON.stringify(message));

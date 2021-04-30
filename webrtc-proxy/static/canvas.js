@@ -6,15 +6,13 @@ var offsetX = canvasBounding.left;
 var offsetY = canvasBounding.top;
 
 // Dragging
-var dragging = false;
+var isDragging = false;
+var hasDragged = false;
 var startX;
 var startY;
 
 // Avatars
 var avatars = [];
-// avatars.push({ x: 25, y: 75, width: 15, height: 15, fill: "#444444", isDragging: false });
-// avatars.push({ x: 50, y: 75, width: 15, height: 15, fill: "#ff0000", isDragging: false });
-// avatars.push({ x: 75, y: 75, width: 15, height: 15, fill: "#0800ff", isDragging: false });
 
 // Render-loop
 function updateCanvasArea() {
@@ -24,7 +22,12 @@ function updateCanvasArea() {
     // Draw rects in list
     avatars.forEach((avatar) => {
         context.fillStyle = avatar.fill;
-        rect(avatar.x, avatar.y, avatar.width, avatar.height);
+        // Highlight own avatar
+        if (avatar.name === username) {
+            rect(avatar.x, avatar.y, avatar.width, avatar.height, true);
+        } else {
+            rect(avatar.x, avatar.y, avatar.width, avatar.height, false);
+        }
     });
 
     requestAnimationFrame(updateCanvasArea);
@@ -41,9 +44,12 @@ canvas.onmousedown = (event) => {
 
     // Find mouse-avatar overlap
     avatars.forEach((avatar) => {
-        if (mouseX > avatar.x && mouseX < avatar.x + avatar.width && mouseY > avatar.y && mouseY < avatar.y + avatar.height) {
-            dragging = true;
-            avatar.isDragging = true;
+        if (isPointInRect(mouseX, mouseY, avatar)) {
+            // So user can only drag own avatar
+            if (avatar.name === username) {
+                isDragging = true;
+                avatar.isDragging = true;
+            }
         }
     });
     // Save start of drag mouse position
@@ -55,27 +61,33 @@ canvas.onmouseup = (event) => {
     event.preventDefault();
     event.stopPropagation();
 
-    // Reset all dragging-related variables
-    dragging = false;
+    // Reset dragging-related variables
     avatars.forEach((avatar) => {
         avatar.isDragging = false;
     });
+    if (isDragging && hasDragged) {
+        // Notify server of canvas change
+        send({
+            type: "canvasUpdate",
+            avatars: avatars
+        });
+    }
+    isDragging = false;
+    hasDragged = false;
 
-    // Notify server of canvas change
-    send({
-        type: "canvasUpdate",
-        avatars: avatars
-    });
 }
 
 canvas.onmousemove = (event) => {
-    if (dragging) {
+    // Get mouse position
+    var mouseX = parseInt(event.clientX - offsetX);
+    var mouseY = parseInt(event.clientY - offsetY);
+
+    // Dragging
+    if (isDragging) {
         event.preventDefault();
         event.stopPropagation();
 
-        // Get mouse position
-        var mouseX = parseInt(event.clientX - offsetX);
-        var mouseY = parseInt(event.clientY - offsetY);
+        hasDragged = true;
 
         // Calculate distance moved since last mousemove event
         var deltaX = mouseX - startX;
@@ -93,13 +105,33 @@ canvas.onmousemove = (event) => {
         startX = mouseX;
         startY = mouseY;
     }
+
+    // Cursor hover styling
+    avatars.forEach((avatar) => {
+        if (isPointInRect(mouseX, mouseY, avatar)) {
+            if (avatar.name === username) {
+                canvas.style.cursor = "pointer";
+            }
+        } else {
+            canvas.style.cursor = "default";
+        }
+    });
 }
 
-function rect(x, y, width, height) {
+function rect(x, y, width, height, stroke) {
     context.beginPath();
     context.rect(x, y, width, height);
     context.closePath();
     context.fill();
+    if (stroke) { context.stroke(); }
+}
+
+function isPointInRect(x, y, rect) {
+    if (x > rect.x && x < rect.x + rect.width && y > rect.y && y < rect.y + rect.height) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 // Trigger render-loop
