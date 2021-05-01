@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: coffeebreak-service
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     app: coffeebreak
   ports:
      -  protocol: TCP
-        name: http
-        port: 80
-  #     targetPort: 8080
+        name: https
+        port: 8080
+        targetPort: 8080

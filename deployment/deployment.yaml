@@ -2,16 +2,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coffeebreak
+  name: coffeebreak-deployment
+  labels:
+    app: coffeebreak
 spec:
   selector:
-    matchLabels:
-      run: coffeebreak
+      matchLabels:
+        app: coffeebreak
   replicas: 2
   template:
     metadata:
       labels:
-        run: coffeebreak
+        app: coffeebreak
     spec:
       containers:
       - name: coffeebreak
