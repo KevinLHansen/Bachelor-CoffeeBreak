@@ -23,6 +23,8 @@ var joinCallBtn = document.getElementById("joinCallBtn");
 
 var localVideo = document.getElementById("localVideo");
 var remoteVideo = document.getElementById("remoteVideo");
+var localAudio = document.getElementById("localAudio");
+var remoteAudio = document.getElementById("remoteAudio");
 
 msgInput.disabled = true;
 sendBtn.disabled = true;
@@ -88,14 +90,14 @@ loginBtn.addEventListener("click", (event) => {
             // Find function based on browser
             navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-            navigator.getUserMedia({ video: true, audio: true }, (stream) => {
+            navigator.getUserMedia({ video: false, audio: true }, (stream) => {
                 localStream = stream;
 
                 localConnection = new webkitRTCPeerConnection();
                 localConnection.addStream(localStream);
                 // When a stream is added to localConnection 
                 localConnection.onaddstream = (event) => {
-                    remoteVideo.srcObject = event.stream;
+                    remoteAudio.srcObject = event.stream;
                 };
             }, (error) => {
                 // Error
@@ -140,7 +142,7 @@ msgInput.addEventListener("keyup", (event) => {
 
 // Join call button
 joinCallBtn.addEventListener("click", (event) => {
-    localVideo.srcObject = localStream;
+    localAudio.srcObject = localStream;
     joinCallBtn.disabled = true;
 
     localConnection.createOffer((offer) => {

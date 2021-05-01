@@ -32,9 +32,16 @@
 
     <br>
 
-    <div>
-        <video id="localVideo" autoplay style="background-color: lightgray;"></video>
-        <video id="remoteVideo" autoplay style="background-color: lightgray;"></video>
+    <div style="display: flex;">
+        <div>
+            <label>Local audio stream</label> <br>
+            <audio id="localAudio" controls autoplay></audio>
+        </div>
+        <div>
+            <label>Remote audio stream</label> <br>
+            <audio id="remoteAudio" controls autoplay></audio>
+        </div>
+
     </div>
 
     <br>
