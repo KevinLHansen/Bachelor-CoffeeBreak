@@ -4,15 +4,22 @@ const serverPort = "8074";
 
 // Variables
 
-var webSocket;
-var username = "";
-var localStream;
-var localConnection;
+var webSocket; // Websocket connection
+var username = ""; // Own username
+var room; // Current room
+var localStream; // Own MediaStream
+var localConnection; // Own RTCPeerConnection
 
 // UI elements
 
 var loginInput = document.getElementById("loginInput");
 var loginBtn = document.getElementById("loginBtn");
+
+var joinRoomInput = document.getElementById("joinRoomInput");
+var joinRoomBtn = document.getElementById("joinRoomBtn");
+
+var createRoomInput = document.getElementById("createRoomInput");
+var createRoomBtn = document.getElementById("createRoomBtn");
 
 var msgInput = document.getElementById("msgInput");
 var sendBtn = document.getElementById("sendBtn");
@@ -22,70 +29,77 @@ var chatTxt = document.getElementById("chatTxt");
 var joinCallBtn = document.getElementById("joinCallBtn");
 var leaveCallBtn = document.getElementById("leaveCallBtn");
 
+var roomLabel = document.getElementById("roomLabel");
+var usersLabel = document.getElementById("usersLabel");
+
 var audioContainer = document.getElementById("audioContainer");
 
-var localVideo = document.getElementById("localVideo");
-var remoteVideo = document.getElementById("remoteVideo");
-var localAudio = document.getElementById("localAudio");
-var remoteAudio = document.getElementById("remoteAudio");
+setDisabled([
+    msgInput, sendBtn, chatTxt,
+    joinCallBtn, leaveCallBtn, joinRoomInput,
+    joinRoomBtn, createRoomInput, createRoomBtn
+], true);
 
-msgInput.disabled = true;
-sendBtn.disabled = true;
-chatTxt.disabled = true;
-joinCallBtn.disabled = true;
+// WebSocket initiation
+
+if (!webSocket) { // Connect WebSocket if not already
+    var url = `${serverIP}:${serverPort}`;
+    console.log(`Client connecting to WebSocket: ${url}`);
+    webSocket = new WebSocket(`wss://${url}`);
+}
+
+webSocket.onopen = () => {
+    console.log("Client connected to WebSocket");
+};
+
+webSocket.onmessage = (message) => {
+    // Parse message data from JSON
+    var data = JSON.parse(message.data);
+
+    // Exclude types which flood the console
+    if (
+        data.type !== "offer" &&
+        data.type !== "answer" &&
+        data.type !== "canvasUpdate" &&
+        data.type !== "createRoom"
+    ) {
+        console.log("Message received: " + message.data);
+    }
+
+    switch (data.type) {
+        case "login": // Login attempt response
+            onLogin(data.success);
+            break;
+        case "createRoom":
+            onCreateRoom(data);
+            break;
+        case "chat": // Incoming chat
+            onChat(data);
+            break;
+        case "offer":
+            console.log("Offer received from: " + data.name);
+            onOffer(data.offer, data.name);
+            break;
+        case "answer":
+            console.log("Answer received from: " + data.name);
+            onAnswer(data.answer);
+            break;
+        case "canvasUpdate":
+            console.log("Canvas update received from " + data.name);
+            onCanvasUpdate(data);
+            break;
+    }
+};
 
 // Login button
 loginBtn.addEventListener("click", (event) => {
     if (loginInput.value) {
         username = loginInput.value;
 
-        // WebSocket initiation
-
-        if (!webSocket) { // Connect WebSocket if not already
-            var url = `${serverIP}:${serverPort}`;
-            console.log(`Client connecting to WebSocket: ${url}`);
-            webSocket = new WebSocket(`wss://${url}`);
-        }
-
-        webSocket.onopen = () => {
-            console.log("Client connected to WebSocket");
-            send({
-                type: "login",
-                canvas: { width: canvas.width, height: canvas.height }
-            });
-            console.log("User logged in: " + username);
-        };
-
-        webSocket.onmessage = (message) => {
-            // Parse message data from JSON
-            var data = JSON.parse(message.data);
-
-            // Exclude types which flood the console
-            if (data.type !== "offer" && data.type !== "answer" && data.type !== "canvasUpdate") {
-                console.log("Message received: " + message);
-            }
-
-            switch (data.type) {
-                case "login": // Login attempt response
-                    onLogin(data.success);
-                    break;
-                case "chat": // Incoming chat
-                    onChat(data);
-                    break;
-                case "offer":
-                    console.log("Offer received from: " + data.name);
-                    onOffer(data.offer, data.name);
-                    break;
-                case "answer":
-                    console.log("Answer received from: " + data.name);
-                    onAnswer(data.answer);
-                    break;
-                case "canvasUpdate":
-                    console.log("Canvas update received from " + data.name);
-                    onCanvasUpdate(data);
-                    break;
-            }
-        };
+        send({
+            type: "login",
+            canvas: { width: canvas.width, height: canvas.height }
+        });
 
         // WebRTC initiation
 
@@ -105,7 +119,7 @@ loginBtn.addEventListener("click", (event) => {
                 //     audioContainer.appendChild(audioElement);
                 // };
 
-                localConnection.addEventListener('track', (event) => {
+                localConnection.addEventListener("track", (event) => {
                     var audioElement = createAudioElement("", event.streams[0]);
                     audioContainer.appendChild(audioElement);
                 });
@@ -128,6 +142,33 @@ loginInput.addEventListener("keyup", (event) => {
     if (event.key === "Enter") {
         event.preventDefault();
         loginBtn.click();
+    }
+});
+
+// Join room button
+joinRoomBtn.addEventListener("click", (event) => {
+
+});
+
+// Create room button
+createRoomBtn.addEventListener("click", (event) => {
+    if (createRoomInput) {
+        var roomId = createRoomInput.value;
+        console.log("Creating room: " + roomId);
+        // Send create room message to proxy server
+        send({
+            type: "createRoom",
+            roomId: roomId
+        });
+        createRoomInput.value = "";
+    }
+});
+
+// KeyUp listener for createRoomInput
+createRoomInput.addEventListener("keyup", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        createRoomBtn.click();
     }
 });
 
@@ -160,6 +201,7 @@ joinCallBtn.addEventListener("click", (event) => {
     audioContainer.appendChild(audioElement);
 
     joinCallBtn.disabled = true;
+    leaveCallBtn.disabled = false;
 
     localConnection.createOffer((offer) => {
         send({
@@ -175,16 +217,55 @@ joinCallBtn.addEventListener("click", (event) => {
     console.log(error);
 });
 
+// Leave call button
+leaveCallBtn.addEventListener("click", (event) => {
+
+    joinCallBtn.disabled = false;
+    leaveCallBtn.disabled = true;
+
+    localConnection.setLocalDescription(null);
+    // Clear all audio elements
+    audioContainer.innerHTML = "";
+});
+
 function onLogin(success) {
     if (success) {
-        loginInput.disabled = true;
-        loginBtn.disabled = true;
-        msgInput.disabled = false;
-        sendBtn.disabled = false;
-        chatTxt.disabled = false;
-        joinCallBtn.disabled = false;
+        console.log("User logged in: " + username);
+
+        setDisabled([loginInput, loginBtn], true);
+
+        setDisabled([
+            msgInput, sendBtn, chatTxt,
+            joinCallBtn, joinRoomInput, joinRoomBtn,
+            createRoomInput, createRoomBtn
+        ], false);
+
+        roomLabel.textContent = "none";
     } else {
-        alert("Unsuccesful login");
+        alert("Username taken");
+    }
+}
+
+function onCreateRoom(data) {
+    if (data.success) {
+        console.log("Room created: " + data.roomId);
+
+        room = data.room; // Save current room
+        // Update UI elements
+        roomLabel.textContent = data.roomId;
+        var usersString = "";
+        for (user in room.users) {
+            usersString += user + ", ";
+        }
+        usersLabel.textContent = usersString;
+
+        setDisabled([
+            createRoomInput, createRoomBtn,
+            joinRoomInput, joinRoomBtn
+        ], true);
+
+    } else {
+        alert("Room name occupied");
     }
 }
 
@@ -240,4 +321,11 @@ function createAudioElement(username, mediaStream) {
     audioElement.setAttribute("autoplay", true)
 
     return audioElement;
+}
+
+// Disables/enables multiple HTML elements at a time
+function setDisabled(elements, disabled) {
+    elements.forEach((element) => {
+        element.disabled = disabled;
+    });
 }

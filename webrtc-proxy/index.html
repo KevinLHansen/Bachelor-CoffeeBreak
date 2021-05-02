@@ -14,6 +14,20 @@
     <br>
 
     <div>
+        <input type="text" id="joinRoomInput" />
+        <button id="joinRoomBtn">Join room</button>
+    </div>
+
+    <br>
+
+    <div>
+        <input type="text" id="createRoomInput" />
+        <button id="createRoomBtn">Create room</button>
+    </div>
+
+    <br>
+
+    <div>
         <input type="text" id="msgInput" />
         <button id="sendBtn">Send message</button>
     </div>
@@ -33,22 +47,19 @@
 
     <br>
 
-    <div style="display: flex;">
-        <div>
-            <label>Local audio stream</label> <br>
-            <audio id="localAudio" controls autoplay></audio>
-        </div>
-        <div>
-            <label>Remote audio stream</label> <br>
-            <audio id="remoteAudio" controls autoplay></audio>
-        </div>
-    </div>
-
     <div id="audioContainer">
-
+        <!-- JS-generated audio elements get appended here -->
     </div>
 
     <br>
+
+    <div>
+        <label>Room: </label>
+        <label id="roomLabel"></label>
+        <br>
+        <label>Users: </label>
+        <label id="usersLabel"></label>
+    </div>
 
     <canvas height="300" width="600" style="border: black 2px solid;"></canvas>
 

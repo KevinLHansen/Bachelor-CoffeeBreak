@@ -18,16 +18,25 @@ https.listen(port);
 console.log(`Proxy server live at https://localhost:${port}`);
 
 var users = {}; // Key-value pairs of username:connection
+var rooms = {}; // Key-value pairs of roomId:{owner:"", users:{}, avatars:[]}
 var avatars = []; // List of avatar objects
+
+// rooms = {
+//     "exampleRoomId": {
+//         "owner": "exampleUsername3",
+//         "users": {
+//             "exampleUsername": exampleConnection,
+//             "exampleUsername2": exampleConnection2
+//         },
+//         "avatars": [
+//             { name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false },
+//             { name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false }
+//         ]  
+//     }
+// }
 
 wss.on('connection', (connection) => {
     console.log("Connection received");
-
-    // Send initial canvas update (temporary)
-    sendTo(connection, {
-        type: "canvasUpdate",
-        avatars: avatars
-    });
 
     connection.on('message', (message) => {
         var data;
@@ -59,10 +68,36 @@ wss.on('connection', (connection) => {
                         type: "login",
                         success: true
                     });
-
                     console.log("User logged: " + data.name);
 
                     createAvatar(data);
+                }
+                break;
+
+            case "createRoom":
+                if (rooms[data.roomId]) { // Check if roomId already exists
+                    sendTo(connection, {
+                        type: "createRoom",
+                        success: false
+                    });
+                } else { // Register room
+                    rooms[data.roomId] = {
+                        owner: data.name,
+                        users: {},
+                        avatars: []
+                    };
+                    // Add room creator to room
+                    rooms[data.roomId].users[data.name] = users[data.name];
+
+                    console.log('ROOMS: ', rooms); // TEMP
+
+                    sendTo(connection, {
+                        type: "createRoom",
+                        roomId: data.roomId,
+                        room: rooms[data.roomId],
+                        success: true
+                    });
+                    console.log("Room created: " + data.roomId);
                 }
                 break;
 
