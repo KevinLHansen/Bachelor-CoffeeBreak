@@ -21,6 +21,7 @@ var users = {}; // Key-value pairs of username:connection
 var rooms = {}; // Key-value pairs of roomId:{owner:"", users:{}, avatars:[]}
 var avatars = []; // List of avatar objects
 
+// The rooms object is structured as such:
 // rooms = {
 //     "exampleRoomId": {
 //         "owner": "exampleUsername3",
@@ -88,6 +89,8 @@ wss.on('connection', (connection) => {
                     };
                     // Add room creator to room
                     rooms[data.roomId].users[data.name] = users[data.name];
+                    // Add roomId association to user registry
+                    users[data.name].roomId = data.roomId;
 
                     console.log('ROOMS: ', rooms); // TEMP
 
@@ -106,6 +109,8 @@ wss.on('connection', (connection) => {
 
                     // Add user to room
                     rooms[data.roomId].users[data.name] = users[data.name];
+                    // Add roomId association to user registry
+                    users[data.name].roomId = data.roomId;
                     console.log("User: " + data.name + " joined room: " + data.roomId);
 
                     console.log('ROOMS: ', rooms); // TEMP
@@ -119,15 +124,7 @@ wss.on('connection', (connection) => {
                     });
 
                     // Notify other users in the room
-                    for (user in rooms[data.roomId].users) {
-                        // Exclude joiner (has already received)
-                        if (rooms[data.roomId].users[user].name !== data.name) {
-                            sendTo(rooms[data.roomId].users[user], {
-                                type: "roomUpdate",
-                                room: rooms[data.roomId]
-                            });
-                        }
-                    }
+                    sendRoomUpdate(data.roomId);
                 } else {
                     sendTo(connection, {
                         type: "joinRoom",
@@ -183,6 +180,8 @@ wss.on('connection', (connection) => {
     connection.on('close', () => {
         if (connection.name) {
             console.log("User disconnected: " + connection.name);
+
+            leaveRoom(connection.name);
             removeAvatar(connection.name);
             delete users[connection.name];
         }
@@ -211,13 +210,29 @@ function createAvatar(data) {
     sendCanvasUpdate();
 }
 
+function leaveRoom(username) {
+    // Get roomId of room user is in
+    var roomId = users[username].roomId;
+    delete rooms[roomId].users[username];
+
+    sendRoomUpdate(roomId);
+}
+
+function sendRoomUpdate(roomId) {
+    for (user in rooms[roomId].users) {
+        sendTo(rooms[roomId].users[user], {
+            type: "roomUpdate",
+            room: rooms[roomId]
+        });
+    }
+}
+
 function removeAvatar(username) {
     for (let i = 0; i < avatars.length; i++) {
         if (avatars[i].name === username) {
             avatars.splice(i, 1);
         }
     }
-
     sendCanvasUpdate();
 }
 

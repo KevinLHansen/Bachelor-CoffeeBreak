@@ -78,6 +78,7 @@ canvas.onmouseup = (event) => {
 }
 
 canvas.onmousemove = (event) => {
+    updateOffset();
     // Get mouse position
     var mouseX = parseInt(event.clientX - offsetX);
     var mouseY = parseInt(event.clientY - offsetY);
@@ -132,6 +133,13 @@ function isPointInRect(x, y, rect) {
     } else {
         return false;
     }
+}
+
+// Update offset variables for if the page layout has changed
+function updateOffset() {
+    canvasBounding = canvas.getBoundingClientRect();
+    offsetX = canvasBounding.left;
+    offsetY = canvasBounding.top;
 }
 
 // Trigger render-loop

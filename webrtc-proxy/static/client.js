@@ -248,8 +248,6 @@ function onLogin(success) {
             joinCallBtn, joinRoomInput, joinRoomBtn,
             createRoomInput, createRoomBtn
         ], false);
-
-        roomLabel.textContent = "none";
     } else {
         alert("Username taken");
     }
