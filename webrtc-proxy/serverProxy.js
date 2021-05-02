@@ -17,8 +17,8 @@ https.listen(port);
 
 console.log(`Proxy server live at https://localhost:${port}`);
 
-var users = {};
-var avatars = [];
+var users = {}; // Key-value pairs of username:connection
+var avatars = []; // List of avatar objects
 
 wss.on('connection', (connection) => {
     console.log("Connection received");

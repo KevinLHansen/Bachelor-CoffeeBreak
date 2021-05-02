@@ -20,6 +20,9 @@ var sendBtn = document.getElementById("sendBtn");
 var chatTxt = document.getElementById("chatTxt");
 
 var joinCallBtn = document.getElementById("joinCallBtn");
+var leaveCallBtn = document.getElementById("leaveCallBtn");
+
+var audioContainer = document.getElementById("audioContainer");
 
 var localVideo = document.getElementById("localVideo");
 var remoteVideo = document.getElementById("remoteVideo");
@@ -92,17 +95,27 @@ loginBtn.addEventListener("click", (event) => {
 
             navigator.getUserMedia({ video: false, audio: true }, (stream) => {
                 localStream = stream;
-
                 localConnection = new webkitRTCPeerConnection();
                 localConnection.addStream(localStream);
+
                 // When a stream is added to localConnection 
-                localConnection.onaddstream = (event) => {
-                    remoteAudio.srcObject = event.stream;
-                };
+
+                // localConnection.onaddstream = (event) => {
+                //     var audioElement = createAudioElement("", event.stream);
+                //     audioContainer.appendChild(audioElement);
+                // };
+
+                localConnection.addEventListener('track', (event) => {
+                    var audioElement = createAudioElement("", event.streams[0]);
+                    audioContainer.appendChild(audioElement);
+                });
+
             }, (error) => {
                 // Error
                 console.log(error);
             });
+
+
         } else {
             // Browser does not support WebRTC
             alert("Your browser does not support WebRTC")
@@ -142,7 +155,10 @@ msgInput.addEventListener("keyup", (event) => {
 
 // Join call button
 joinCallBtn.addEventListener("click", (event) => {
-    localAudio.srcObject = localStream;
+
+    var audioElement = createAudioElement(username, localStream);
+    audioContainer.appendChild(audioElement);
+
     joinCallBtn.disabled = true;
 
     localConnection.createOffer((offer) => {
@@ -214,4 +230,14 @@ function hasUserMedia() {
         navigator.webkitGetUserMedia || // Chrome
         navigator.mozGetUserMedia // Firefox
     );
+}
+
+function createAudioElement(username, mediaStream) {
+    var audioElement = document.createElement("audio");
+    audioElement.id = username;
+    audioElement.srcObject = mediaStream;
+    audioElement.setAttribute("controls", true);
+    audioElement.setAttribute("autoplay", true)
+
+    return audioElement;
 }
