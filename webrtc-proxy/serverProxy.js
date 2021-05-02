@@ -101,6 +101,41 @@ wss.on('connection', (connection) => {
                 }
                 break;
 
+            case "joinRoom":
+                if (rooms[data.roomId]) { // Check if room exists
+
+                    // Add user to room
+                    rooms[data.roomId].users[data.name] = users[data.name];
+                    console.log("User: " + data.name + " joined room: " + data.roomId);
+
+                    console.log('ROOMS: ', rooms); // TEMP
+
+                    // Respond to joiner
+                    sendTo(connection, {
+                        type: "joinRoom",
+                        roomId: data.roomId,
+                        room: rooms[data.roomId],
+                        success: true
+                    });
+
+                    // Notify other users in the room
+                    for (user in rooms[data.roomId].users) {
+                        // Exclude joiner (has already received)
+                        if (rooms[data.roomId].users[user].name !== data.name) {
+                            sendTo(rooms[data.roomId].users[user], {
+                                type: "roomUpdate",
+                                room: rooms[data.roomId]
+                            });
+                        }
+                    }
+                } else {
+                    sendTo(connection, {
+                        type: "joinRoom",
+                        success: false
+                    });
+                }
+                break;
+
             case "chat":
                 console.log("Chat received: " + data.name + ": " + data.message);
                 // Relay chat message to all users
@@ -113,7 +148,7 @@ wss.on('connection', (connection) => {
                 console.log("Offer received from: " + data.name);
                 // Relay offer to all other users
                 for (user in users) {
-                    // Don't send to sender
+                    // Exclude sender
                     if (users[user].name !== data.name) {
                         sendTo(users[user], data);
                     }

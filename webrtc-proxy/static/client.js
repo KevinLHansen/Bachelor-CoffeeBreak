@@ -7,6 +7,7 @@ const serverPort = "8074";
 var webSocket; // Websocket connection
 var username = ""; // Own username
 var room; // Current room
+var roomId; // Current room ID
 var localStream; // Own MediaStream
 var localConnection; // Own RTCPeerConnection
 
@@ -61,7 +62,9 @@ webSocket.onmessage = (message) => {
         data.type !== "offer" &&
         data.type !== "answer" &&
         data.type !== "canvasUpdate" &&
-        data.type !== "createRoom"
+        data.type !== "createRoom" &&
+        data.type !== "joinRoom" &&
+        data.type !== "roomUpdate"
     ) {
         console.log("Message received: " + message.data);
     }
@@ -72,6 +75,13 @@ webSocket.onmessage = (message) => {
             break;
         case "createRoom":
             onCreateRoom(data);
+            break;
+        case "joinRoom":
+            onJoinRoom(data);
+            break;
+        case "roomUpdate":
+            console.log("Room update received");
+            onRoomUpdate(data);
             break;
         case "chat": // Incoming chat
             onChat(data);
@@ -137,17 +147,17 @@ loginBtn.addEventListener("click", (event) => {
     }
 });
 
-// KeyUp listener for loginInput
-loginInput.addEventListener("keyup", (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        loginBtn.click();
-    }
-});
-
 // Join room button
 joinRoomBtn.addEventListener("click", (event) => {
-
+    if (joinRoomInput) {
+        var roomId = joinRoomInput.value;
+        console.log("Joining room: " + roomId);
+        // Send join room message to proxy server
+        send({
+            type: "joinRoom",
+            roomId: roomId
+        });
+    }
 });
 
 // Create room button
@@ -160,15 +170,6 @@ createRoomBtn.addEventListener("click", (event) => {
             type: "createRoom",
             roomId: roomId
         });
-        createRoomInput.value = "";
-    }
-});
-
-// KeyUp listener for createRoomInput
-createRoomInput.addEventListener("keyup", (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        createRoomBtn.click();
     }
 });
 
@@ -183,14 +184,6 @@ sendBtn.addEventListener("click", (event) => {
             message: msg
         });
         msgInput.value = "";
-    }
-});
-
-// KeyUp listener for msgInput
-msgInput.addEventListener("keyup", (event) => {
-    if (event.key === "Enter") {
-        event.preventDefault();
-        sendBtn.click();
     }
 });
 
@@ -228,6 +221,22 @@ leaveCallBtn.addEventListener("click", (event) => {
     audioContainer.innerHTML = "";
 });
 
+// Add keyup eventListeners to elements which need them ([input, button])
+[
+    [loginInput, loginBtn],
+    [joinRoomInput, joinRoomBtn],
+    [createRoomInput, createRoomBtn],
+    [msgInput, sendBtn]
+
+].forEach((element) => {
+    element[0].addEventListener("keyup", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            element[1].click();
+        }
+    });
+});
+
 function onLogin(success) {
     if (success) {
         console.log("User logged in: " + username);
@@ -246,18 +255,36 @@ function onLogin(success) {
     }
 }
 
+function onJoinRoom(data) {
+    if (data.success) {
+        console.log("Room joined: " + data.roomId);
+
+        room = data.room; // Save current room
+        // Update UI elements
+        joinRoomInput.value = "";
+        roomId = data.roomId;
+        updateRoomUI();
+
+        setDisabled([
+            createRoomInput, createRoomBtn,
+            joinRoomInput, joinRoomBtn
+        ], true);
+    } else {
+        alert("Invalid room name");
+    }
+}
+
 function onCreateRoom(data) {
     if (data.success) {
         console.log("Room created: " + data.roomId);
 
-        room = data.room; // Save current room
+        // Update room variables
+        room = data.room;
+        roomId = data.roomId;
         // Update UI elements
-        roomLabel.textContent = data.roomId;
-        var usersString = "";
-        for (user in room.users) {
-            usersString += user + ", ";
-        }
-        usersLabel.textContent = usersString;
+        createRoomInput.value = "";
+
+        updateRoomUI();
 
         setDisabled([
             createRoomInput, createRoomBtn,
@@ -267,6 +294,12 @@ function onCreateRoom(data) {
     } else {
         alert("Room name occupied");
     }
+}
+
+function onRoomUpdate(data) {
+    room = data.room; // Update room state
+    // Update UI elements
+    updateRoomUI();
 }
 
 function onChat(data) {
@@ -328,4 +361,14 @@ function setDisabled(elements, disabled) {
     elements.forEach((element) => {
         element.disabled = disabled;
     });
+}
+
+// Updates room-relevant UI
+function updateRoomUI() {
+    roomLabel.textContent = roomId;
+    var usersString = "";
+    for (user in room.users) {
+        usersString += user + ", ";
+    }
+    usersLabel.textContent = usersString;
 }
