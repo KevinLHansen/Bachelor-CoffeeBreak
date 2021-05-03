@@ -54,6 +54,18 @@ spec:
       image: benjaminhck/coffeebreak-web:latest
       ports:
         - containerPort: 8080
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 8080
+          scheme: HTTPS
+        initialDelaySeconds: 5
+        periodSeconds: 10
+      livenessProbe:
+        tcpSocket:
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 20
 
 ---
 apiVersion: v1
