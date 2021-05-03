@@ -155,6 +155,7 @@ joinRoomBtn.addEventListener("click", (event) => {
         // Send join room message to proxy server
         send({
             type: "joinRoom",
+            canvas: { width: canvas.width, height: canvas.height },
             roomId: roomId
         });
     }
@@ -168,6 +169,7 @@ createRoomBtn.addEventListener("click", (event) => {
         // Send create room message to proxy server
         send({
             type: "createRoom",
+            canvas: { width: canvas.width, height: canvas.height },
             roomId: roomId
         });
     }
