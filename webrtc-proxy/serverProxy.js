@@ -181,7 +181,9 @@ wss.on('connection', (connection) => {
         if (connection.name) {
             console.log("User disconnected: " + connection.name);
 
-            leaveRoom(connection.name);
+            if (connection.roomId) {
+                leaveRoom(connection.name);
+            }
             removeAvatar(connection.name);
             delete users[connection.name];
         }
