@@ -2,9 +2,10 @@
 ## Deployment & Install
 ### Building Docker Image
 Navigate to root project folder:  
-    ``docker build . -t <name of tag>``  
-    tag for build is coffeebreak: \<version>
-
+    ``docker build . -t benjaminhck/<name of build type>``  
+    tag for build is benjaminhck/coffeebreak-web OR benjamin/coffeebreak-proxy,  
+    dependant on the build type.  
+    
 ### Running the docker image
 Example:  
 ``docker run --rm -p 8080:8080/tcp coffeebreak:v1``
@@ -15,7 +16,7 @@ Example:
 
 ### Pushing to DockerHub
 FOR COLLABORATORS ONLY  
-``docker push benjaminhck/coffeebreak:latest``
+``docker push benjaminhck/coffeebreak:latest``  
 
 ### Kubernetes
 Create the coffeebreak namespace  
