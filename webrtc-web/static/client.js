@@ -246,7 +246,6 @@ function onLogin(success) {
         setDisabled([loginInput, loginBtn], true);
 
         setDisabled([
-            msgInput, sendBtn, chatTxt,
             joinCallBtn, joinRoomInput, joinRoomBtn,
             createRoomInput, createRoomBtn
         ], false);
@@ -264,6 +263,10 @@ function onJoinRoom(data) {
         joinRoomInput.value = "";
         roomId = data.roomId;
         updateRoomUI();
+
+        setDisabled([
+            msgInput, sendBtn, chatTxt,
+        ], false);
 
         setDisabled([
             createRoomInput, createRoomBtn,
@@ -285,6 +288,10 @@ function onCreateRoom(data) {
         createRoomInput.value = "";
 
         updateRoomUI();
+
+        setDisabled([
+            msgInput, sendBtn, chatTxt,
+        ], false);
 
         setDisabled([
             createRoomInput, createRoomBtn,
