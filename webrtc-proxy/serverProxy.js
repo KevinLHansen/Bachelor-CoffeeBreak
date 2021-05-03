@@ -19,16 +19,15 @@ console.log(`Proxy server live at https://localhost:${port}`);
 
 var users = {}; // Key-value pairs of username:connection
 var rooms = {}; // Key-value pairs of roomId:{owner:"", users:{}, avatars:[]}
-var avatars = []; // List of avatar objects
 
 // The rooms object is structured as such:
 // rooms = {
 //     "exampleRoomId": {
 //         "owner": "exampleUsername3",
-//         "users": {
-//             "exampleUsername": exampleConnection,
-//             "exampleUsername2": exampleConnection2
-//         },
+//         "users": [
+//              "exampleUsername",
+//              "exampleUsername2"
+//          ],
 //         "avatars": [
 //             { name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false },
 //             { name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false }
@@ -70,8 +69,6 @@ wss.on('connection', (connection) => {
                         success: true
                     });
                     console.log("User logged: " + data.name);
-
-                    createAvatar(data);
                 }
                 break;
 
@@ -84,15 +81,15 @@ wss.on('connection', (connection) => {
                 } else { // Register room
                     rooms[data.roomId] = {
                         owner: data.name,
-                        users: {},
+                        users: [],
                         avatars: []
                     };
                     // Add room creator to room
-                    rooms[data.roomId].users[data.name] = users[data.name];
+                    rooms[data.roomId].users.push(data.name);
                     // Add roomId association to user registry
                     users[data.name].roomId = data.roomId;
 
-                    console.log('ROOMS: ', rooms); // TEMP
+                    createAvatar(data);
 
                     sendTo(connection, {
                         type: "createRoom",
@@ -108,12 +105,10 @@ wss.on('connection', (connection) => {
                 if (rooms[data.roomId]) { // Check if room exists
 
                     // Add user to room
-                    rooms[data.roomId].users[data.name] = users[data.name];
+                    rooms[data.roomId].users.push(data.name);
                     // Add roomId association to user registry
                     users[data.name].roomId = data.roomId;
                     console.log("User: " + data.name + " joined room: " + data.roomId);
-
-                    console.log('ROOMS: ', rooms); // TEMP
 
                     // Respond to joiner
                     sendTo(connection, {
@@ -124,6 +119,7 @@ wss.on('connection', (connection) => {
                     });
 
                     // Notify other users in the room
+                    createAvatar(data);
                     sendRoomUpdate(data.roomId);
                 } else {
                     sendTo(connection, {
@@ -135,10 +131,12 @@ wss.on('connection', (connection) => {
 
             case "chat":
                 console.log("Chat received: " + data.name + ": " + data.message);
+                // Get users in room
+                var userList = rooms[users[data.name].roomId].users;
                 // Relay chat message to all users
-                for (user in users) {
+                userList.forEach((user) => {
                     sendTo(users[user], data);
-                }
+                });
                 break;
 
             case "offer":
@@ -160,13 +158,15 @@ wss.on('connection', (connection) => {
 
             case "canvasUpdate":
                 console.log("Canvas update received from: " + data.name);
-                // Update server avatars
-                avatars = data.avatars;
+                // Update room avatars on server
+                rooms[users[data.name].roomId].avatars = data.avatars;
+                // Get users in room
+                var userList = rooms[users[data.name].roomId].users;
                 // Relay canvas update to all users
-                for (user in users) {
+                userList.forEach((user) => {
                     sendTo(users[user], data);
-                }
-                break
+                });
+                break;
 
             default:
                 sendTo(connection, {
@@ -183,8 +183,8 @@ wss.on('connection', (connection) => {
 
             if (connection.roomId) {
                 leaveRoom(connection.name);
+                removeAvatar(connection.name);
             }
-            removeAvatar(connection.name);
             delete users[connection.name];
         }
     });
@@ -207,29 +207,14 @@ function createAvatar(data) {
     // Get random hex color
     var color = Math.floor(Math.random() * 16777215).toString(16);
 
-    avatars.push({ name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false });
+    rooms[data.roomId].avatars.push({ name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false });
 
     sendCanvasUpdate();
 }
 
-function leaveRoom(username) {
-    // Get roomId of room user is in
-    var roomId = users[username].roomId;
-    delete rooms[roomId].users[username];
-
-    sendRoomUpdate(roomId);
-}
-
-function sendRoomUpdate(roomId) {
-    for (user in rooms[roomId].users) {
-        sendTo(rooms[roomId].users[user], {
-            type: "roomUpdate",
-            room: rooms[roomId]
-        });
-    }
-}
-
 function removeAvatar(username) {
+    // Get list of avatars of room associated with user
+    var avatars = rooms[users[username].roomId].avatars;
     for (let i = 0; i < avatars.length; i++) {
         if (avatars[i].name === username) {
             avatars.splice(i, 1);
@@ -238,14 +223,45 @@ function removeAvatar(username) {
     sendCanvasUpdate();
 }
 
+function leaveRoom(username) {
+    // Get roomId of room user is in
+    var roomId = users[username].roomId;
+    // Get users in room
+    var userList = rooms[users[username].roomId].users;
+
+    for (let i = 0; i < userList.length; i++) {
+        if (userList[i] === username) {
+            userList.splice(i, 1);
+        }
+    }
+
+    sendRoomUpdate(roomId);
+}
+
+function sendRoomUpdate(roomId) {
+    // Get users in room
+    var userList = rooms[roomId].users;
+
+    userList.forEach((user) => {
+        // Get connection of user
+        var connection = users[user];
+        sendTo(connection, {
+            type: "roomUpdate",
+            room: rooms[roomId]
+        });
+    });
+}
+
 // Sends a canvas update to all users
 function sendCanvasUpdate() {
     for (user in users) {
-        sendTo(users[user], {
-            type: "canvasUpdate",
-            avatars: avatars,
-            name: "SERVER"
-        });
+        if (users[user].roomId) { // If users is in a room
+            sendTo(users[user], {
+                type: "canvasUpdate",
+                avatars: rooms[users[user].roomId].avatars,
+                name: "SERVER"
+            });
+        }
     }
 }
 
