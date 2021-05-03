@@ -1,13 +1,19 @@
 const https = require('https');
+const http = require('http');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const requestIp = require('request-ip');
 
-const port = 8080;
+const https_port = 443;
+const http_port = 80;
 
+var httpServer = express();
 var server = express();
+
 server.use(requestIp.mw())
+
+
 
 // Certificate config
 const conf = {
@@ -15,17 +21,27 @@ const conf = {
     cert: fs.readFileSync('cert/cert.pem')
 };
 
-
 // Static resources
 server.use(express.static('static'));
 
 
+// Setup redirect server
+httpServer.get("/", function (req, res, next) {
+    res.redirect("https://" + req.headers.host);
+});
+
+// HTTPS
 server.get('/', (req, res) => {
     const ip = req.clientIp
     res.sendFile(path.join(__dirname + "/index.html"));
     console.log("User from " + ip + " requested root");
 });
 
-https.createServer(conf, server).listen(port, () => {
-    console.log(`Webserver live at https://localhost:${port}`);
+http.createServer(httpServer).listen(http_port, function() {
+    console.log(`HTTP redirect server live at https://localhost:${http_port}`);
 });
+
+https.createServer(conf, server).listen(https_port, () => {
+    console.log(`Webserver live at https://localhost:${https_port}`);
+});
+
