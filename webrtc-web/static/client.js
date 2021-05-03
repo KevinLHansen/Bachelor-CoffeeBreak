@@ -155,6 +155,7 @@ joinRoomBtn.addEventListener("click", (event) => {
         // Send join room message to proxy server
         send({
             type: "joinRoom",
+            canvas: { width: canvas.width, height: canvas.height },
             roomId: roomId
         });
     }
@@ -168,6 +169,7 @@ createRoomBtn.addEventListener("click", (event) => {
         // Send create room message to proxy server
         send({
             type: "createRoom",
+            canvas: { width: canvas.width, height: canvas.height },
             roomId: roomId
         });
     }
@@ -244,7 +246,6 @@ function onLogin(success) {
         setDisabled([loginInput, loginBtn], true);
 
         setDisabled([
-            msgInput, sendBtn, chatTxt,
             joinCallBtn, joinRoomInput, joinRoomBtn,
             createRoomInput, createRoomBtn
         ], false);
@@ -262,6 +263,10 @@ function onJoinRoom(data) {
         joinRoomInput.value = "";
         roomId = data.roomId;
         updateRoomUI();
+
+        setDisabled([
+            msgInput, sendBtn, chatTxt,
+        ], false);
 
         setDisabled([
             createRoomInput, createRoomBtn,
@@ -283,6 +288,10 @@ function onCreateRoom(data) {
         createRoomInput.value = "";
 
         updateRoomUI();
+
+        setDisabled([
+            msgInput, sendBtn, chatTxt,
+        ], false);
 
         setDisabled([
             createRoomInput, createRoomBtn,
