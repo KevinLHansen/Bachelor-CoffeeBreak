@@ -2,12 +2,13 @@
 ## Deployment & Install
 ### Building Docker Image
 Navigate to root project folder:  
-    ``docker build . -t <name of tag>``  
-    tag for build is coffeebreak: \<version>
-
+    ``docker build . -t benjaminhck/<name of build type>``  
+    tag for build is benjaminhck/coffeebreak-web OR benjamin/coffeebreak-proxy,  
+    dependant on the build type.  
+    
 ### Running the docker image
 Example:  
-``docker run --rm -p 8080:8080/tcp coffeebreak:v1``
+``docker run --rm -p 8080:8080/tcp benjamin/coffeebreak-web:latest``
 
 --rm for automatic removal of container on exit
 -p for publishing container ports to host port, syntax is   
@@ -15,15 +16,14 @@ Example:
 
 ### Pushing to DockerHub
 FOR COLLABORATORS ONLY  
-``docker push benjaminhck/coffeebreak:latest``
+``docker push benjaminhck/<name of build type``  
 
 ### Kubernetes
 Create the coffeebreak namespace  
 ``kubectl create namespace coffeebreak``
 
-Apply the deployment and service file to the namespace  
+Apply the deployment file to the namespace  
 ``kubectl -n coffeebreak apply -f deployment/deployment.yaml``   
-``kubectl -n coffeebreak apply -f deployment/service.yaml``  
 
 Useful command to get overall status of namespace  
 ``kubectl -n coffeebreak get all -o wide``
