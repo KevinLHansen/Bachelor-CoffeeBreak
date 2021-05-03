@@ -2,48 +2,70 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coffeebreak-deployment
+  name: coffeebreak-proxy-deployment
   labels:
-    app: coffeebreak
+    app: coffeebreak-proxy
 spec:
   selector:
       matchLabels:
-        app: coffeebreak
-  replicas: 2
+        app: coffeebreak-proxy
+  replicas: 1
   template:
     metadata:
       labels:
-        app: coffeebreak
+        app: coffeebreak-proxy
     spec:
       containers:
-      - name: coffeebreak
-        image: benjaminhck/coffeebreak:latest
+      - name: coffeebreak-proxy
+        image: benjaminhck/coffeebreak-proxy:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 8074
         # livenessProbe:
         #   httpGet:
         #     path: /status
         #     port: 5000
         #   initialDelaySeconds: 3
         #   periodSeconds: 3
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "50m"
-          limits:
-            memory: "256Mi"
-            cpu: "500m"
-#NOTE: comment out `volumeMounts` section for configmap and\or secret guide
-        # volumeMounts:
-        # - name: secret-volume
-        #   mountPath: /secrets/
-        # - name: config-volume
-        #   mountPath: /configs/
-#NOTE: comment out `volumes` section for configmap and\or secret guide
-      # volumes:
-      # - name: secret-volume
-      #   secret:
-      #     secretName: mysecret
-      # - name: config-volume
-      #   configMap:
-      #     name: example-config #name of our configmap object
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coffeebreak-proxy-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: coffeebreak-proxy
+  ports:
+     -  protocol: TCP
+        name: https
+        port: 8074
+        targetPort: 8074
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: coffeebreak-web-pod
+  labels:
+    app: coffeebreak-web-pod
+spec:
+  containers:
+    - name: coffeebreak-web-pod
+      image: benjaminhck/coffeebreak-web:latest
+      ports:
+        - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coffeebreak-web-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: coffeebreak-web-pod
+  ports:
+     -  protocol: TCP
+        name: https
+        port: 8080
+        targetPort: 8080

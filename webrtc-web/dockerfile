@@ -2,11 +2,11 @@ FROM node:12.4.0-alpine
 
 WORKDIR /work/
 
-COPY ./webrtc-proxy/package.json /work/package.json
+COPY package.json /work/package.json
 
 RUN npm install
 
-COPY ./webrtc-proxy/ /work/
+COPY . /work/
 
 EXPOSE 8080
 
