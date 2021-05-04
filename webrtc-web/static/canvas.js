@@ -21,13 +21,13 @@ function updateCanvasArea() {
 
     // Draw rects in list
     avatars.forEach((avatar) => {
-        context.fillStyle = avatar.fill;
         // Highlight own avatar
         if (avatar.name === username) {
-            rect(avatar.x, avatar.y, avatar.width, avatar.height, true);
+            rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, true);
         } else {
-            rect(avatar.x, avatar.y, avatar.width, avatar.height, false);
+            rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, false);
         }
+        text(avatar.name, avatar.x + avatar.width / 2, avatar.y - 5, avatar.fill);
     });
 
     requestAnimationFrame(updateCanvasArea);
@@ -119,12 +119,20 @@ canvas.onmousemove = (event) => {
     });
 }
 
-function rect(x, y, width, height, stroke) {
+function rect(x, y, width, height, fill, stroke) {
+    context.fillStyle = fill;
     context.beginPath();
     context.rect(x, y, width, height);
     context.closePath();
     context.fill();
     if (stroke) { context.stroke(); }
+}
+
+function text(text, x, y, fill) {
+    context.fillStyle = fill;
+    context.font = "12px Arial";
+    context.textAlign = "center";
+    context.fillText(text, x, y);
 }
 
 function isPointInRect(x, y, rect) {

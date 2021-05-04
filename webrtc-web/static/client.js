@@ -63,8 +63,8 @@ webSocket.onmessage = (message) => {
         data.type !== "answer" &&
         data.type !== "canvasUpdate" &&
         data.type !== "createRoom" &&
-        data.type !== "joinRoom" &&
-        data.type !== "roomUpdate"
+        data.type !== "joinRoom" //&&
+        //data.type !== "roomUpdate"
     ) {
         console.log("Message received: " + message.data);
     }
@@ -374,8 +374,12 @@ function setDisabled(elements, disabled) {
 function updateRoomUI() {
     roomLabel.textContent = roomId;
     var usersString = "";
-    for (user in room.users) {
+    // Get users in room
+    var userList = room.users;
+
+    userList.forEach((user) => {
         usersString += user + ", ";
-    }
+    });
+
     usersLabel.textContent = usersString;
 }
