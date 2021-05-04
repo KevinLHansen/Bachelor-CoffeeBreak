@@ -11,112 +11,117 @@ var hasDragged = false;
 var startX;
 var startY;
 
-// Avatars
-var avatars = [];
-
 // Render-loop
 function updateCanvasArea() {
     // Clear the canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw rects in list
-    avatars.forEach((avatar) => {
-        // Highlight own avatar
-        if (avatar.name === username) {
-            rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, true);
-        } else {
-            rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, false);
-        }
-        text(avatar.name, avatar.x + avatar.width / 2, avatar.y - 5, avatar.fill);
-    });
-
+    if (room) {
+        room.avatars.forEach((avatar) => {
+            // Highlight own avatar
+            if (avatar.name === username) {
+                rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, true);
+            } else {
+                rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, false);
+            }
+            text(avatar.name, avatar.x + avatar.width / 2, avatar.y - 5, avatar.fill);
+        });
+    }
     requestAnimationFrame(updateCanvasArea);
 }
 
 // Mouse events
 canvas.onmousedown = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Get mouse position
-    var mouseX = parseInt(event.clientX - offsetX);
-    var mouseY = parseInt(event.clientY - offsetY);
-
-    // Find mouse-avatar overlap
-    avatars.forEach((avatar) => {
-        if (isPointInRect(mouseX, mouseY, avatar)) {
-            // So user can only drag own avatar
-            if (avatar.name === username) {
-                isDragging = true;
-                avatar.isDragging = true;
-            }
-        }
-    });
-    // Save start of drag mouse position
-    startX = mouseX;
-    startY = mouseY;
-}
-
-canvas.onmouseup = (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Reset dragging-related variables
-    avatars.forEach((avatar) => {
-        avatar.isDragging = false;
-    });
-    if (isDragging && hasDragged) {
-        // Notify server of canvas change
-        send({
-            type: "canvasUpdate",
-            avatars: avatars
-        });
-    }
-    isDragging = false;
-    hasDragged = false;
-
-}
-
-canvas.onmousemove = (event) => {
-    updateOffset();
-    // Get mouse position
-    var mouseX = parseInt(event.clientX - offsetX);
-    var mouseY = parseInt(event.clientY - offsetY);
-
-    // Dragging
-    if (isDragging) {
+    if (room) {
         event.preventDefault();
         event.stopPropagation();
 
-        hasDragged = true;
+        // Get mouse position
+        var mouseX = parseInt(event.clientX - offsetX);
+        var mouseY = parseInt(event.clientY - offsetY);
 
-        // Calculate distance moved since last mousemove event
-        var deltaX = mouseX - startX;
-        var deltaY = mouseY - startY;
-
-        // Move avatars marked as dragging (isDraggin = true)
-        avatars.forEach((avatar) => {
-            if (avatar.isDragging) {
-                avatar.x += deltaX;
-                avatar.y += deltaY;
+        // Find mouse-avatar overlap
+        room.avatars.forEach((avatar) => {
+            if (isPointInRect(mouseX, mouseY, avatar)) {
+                // So user can only drag own avatar
+                if (avatar.name === username) {
+                    isDragging = true;
+                    avatar.isDragging = true;
+                }
             }
         });
-
-        // Update start variables for next mousemove event
+        // Save start of drag mouse position
         startX = mouseX;
         startY = mouseY;
     }
+}
 
-    // Cursor hover styling
-    avatars.forEach((avatar) => {
-        if (isPointInRect(mouseX, mouseY, avatar)) {
-            if (avatar.name === username) {
-                canvas.style.cursor = "pointer";
-            }
-        } else {
-            canvas.style.cursor = "default";
+canvas.onmouseup = (event) => {
+    if (room) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Reset dragging-related variables
+        room.avatars.forEach((avatar) => {
+            avatar.isDragging = false;
+        });
+        if (isDragging && hasDragged) {
+            // Notify server of canvas change
+            send({
+                type: "canvasUpdate",
+                avatars: room.avatars
+            });
         }
-    });
+        isDragging = false;
+        hasDragged = false;
+    }
+}
+
+canvas.onmousemove = (event) => {
+    if (room) {
+        updateOffset();
+        // Get mouse position
+        var mouseX = parseInt(event.clientX - offsetX);
+        var mouseY = parseInt(event.clientY - offsetY);
+
+        // Dragging
+        if (isDragging) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            hasDragged = true;
+
+            // Calculate distance moved since last mousemove event
+            var deltaX = mouseX - startX;
+            var deltaY = mouseY - startY;
+
+            // Move avatars marked as dragging (isDraggin = true)
+            room.avatars.forEach((avatar) => {
+                if (avatar.isDragging) {
+                    avatar.x += deltaX;
+                    avatar.y += deltaY;
+                }
+            });
+
+            // Update start variables for next mousemove event
+            startX = mouseX;
+            startY = mouseY;
+        }
+
+
+
+        // Cursor hover styling
+        room.avatars.forEach((avatar) => {
+            if (isPointInRect(mouseX, mouseY, avatar)) {
+                if (avatar.name === username) {
+                    canvas.style.cursor = "pointer";
+                }
+            } else {
+                canvas.style.cursor = "default";
+            }
+        });
+    }
 }
 
 function rect(x, y, width, height, fill, stroke) {

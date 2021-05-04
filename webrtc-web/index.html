@@ -3,12 +3,14 @@
 
 <head>
     <meta charset="utf-8" />
+    <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <div>
         <input type="text" id="loginInput" />
         <button id="loginBtn">Login</button>
+        <button id="logoutBtn">Logout</button>
     </div>
 
     <br>
@@ -16,6 +18,7 @@
     <div>
         <input type="text" id="joinRoomInput" />
         <button id="joinRoomBtn">Join room</button>
+        <button id="leaveRoomBtn">Leave room</button>
     </div>
 
     <br>
@@ -23,19 +26,6 @@
     <div>
         <input type="text" id="createRoomInput" />
         <button id="createRoomBtn">Create room</button>
-    </div>
-
-    <br>
-
-    <div>
-        <input type="text" id="msgInput" />
-        <button id="sendBtn">Send message</button>
-    </div>
-
-    <br>
-
-    <div>
-        <textarea id="chatTxt" readonly style="height: 100px; width: 300px;"></textarea>
     </div>
 
     <br>
@@ -61,7 +51,15 @@
         <label id="usersLabel"></label>
     </div>
 
-    <canvas height="300" width="600" style="border: black 2px solid;"></canvas>
+    <br>
+
+    <input type="text" id="msgInput" />
+    <button style="margin-bottom: 5px" id="sendBtn">Send message</button>
+
+    <div display="flex">
+        <canvas height="300" width="600" style="border: grey 3px solid;"></canvas>
+        <textarea id="chatTxt" readonly style="height: 300px; width: 200px;"></textarea>
+    </div>
 
     <script src="client.js"></script>
     <script src="canvas.js"></script>

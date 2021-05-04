@@ -1,0 +1,12 @@
+body {
+    font-family: Verdana;
+}
+
+button {
+    min-width: 100px;
+}
+
+textarea {
+    outline: none;
+    resize: none;
+}

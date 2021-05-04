@@ -15,9 +15,11 @@ var localConnection; // Own RTCPeerConnection
 
 var loginInput = document.getElementById("loginInput");
 var loginBtn = document.getElementById("loginBtn");
+var logoutBtn = document.getElementById("logoutBtn");
 
 var joinRoomInput = document.getElementById("joinRoomInput");
 var joinRoomBtn = document.getElementById("joinRoomBtn");
+var leaveRoomBtn = document.getElementById("leaveRoomBtn");
 
 var createRoomInput = document.getElementById("createRoomInput");
 var createRoomBtn = document.getElementById("createRoomBtn");
@@ -35,11 +37,7 @@ var usersLabel = document.getElementById("usersLabel");
 
 var audioContainer = document.getElementById("audioContainer");
 
-setDisabled([
-    msgInput, sendBtn, chatTxt,
-    joinCallBtn, leaveCallBtn, joinRoomInput,
-    joinRoomBtn, createRoomInput, createRoomBtn
-], true);
+updateUI("loggedout");
 
 // WebSocket initiation
 
@@ -147,6 +145,11 @@ loginBtn.addEventListener("click", (event) => {
     }
 });
 
+// Logout button
+logoutBtn.addEventListener("click", (event) => {
+    // TO-DO
+});
+
 // Join room button
 joinRoomBtn.addEventListener("click", (event) => {
     if (joinRoomInput) {
@@ -159,6 +162,11 @@ joinRoomBtn.addEventListener("click", (event) => {
             roomId: roomId
         });
     }
+});
+
+// Leave room button
+leaveRoomBtn.addEventListener("click", (event) => {
+    leaveRoom();
 });
 
 // Create room button
@@ -195,8 +203,7 @@ joinCallBtn.addEventListener("click", (event) => {
     var audioElement = createAudioElement(username, localStream);
     audioContainer.appendChild(audioElement);
 
-    joinCallBtn.disabled = true;
-    leaveCallBtn.disabled = false;
+    updateUI("incall");
 
     localConnection.createOffer((offer) => {
         send({
@@ -215,8 +222,7 @@ joinCallBtn.addEventListener("click", (event) => {
 // Leave call button
 leaveCallBtn.addEventListener("click", (event) => {
 
-    joinCallBtn.disabled = false;
-    leaveCallBtn.disabled = true;
+    updateUI("inroom");
 
     localConnection.setLocalDescription(null);
     // Clear all audio elements
@@ -243,12 +249,8 @@ function onLogin(success) {
     if (success) {
         console.log("User logged in: " + username);
 
-        setDisabled([loginInput, loginBtn], true);
+        updateUI("loggedin");
 
-        setDisabled([
-            joinCallBtn, joinRoomInput, joinRoomBtn,
-            createRoomInput, createRoomBtn
-        ], false);
     } else {
         alert("Username taken");
     }
@@ -263,15 +265,8 @@ function onJoinRoom(data) {
         joinRoomInput.value = "";
         roomId = data.roomId;
         updateRoomUI();
+        updateUI("inroom");
 
-        setDisabled([
-            msgInput, sendBtn, chatTxt,
-        ], false);
-
-        setDisabled([
-            createRoomInput, createRoomBtn,
-            joinRoomInput, joinRoomBtn
-        ], true);
     } else {
         alert("Invalid room name");
     }
@@ -288,15 +283,7 @@ function onCreateRoom(data) {
         createRoomInput.value = "";
 
         updateRoomUI();
-
-        setDisabled([
-            msgInput, sendBtn, chatTxt,
-        ], false);
-
-        setDisabled([
-            createRoomInput, createRoomBtn,
-            joinRoomInput, joinRoomBtn
-        ], true);
+        updateUI("inroom");
 
     } else {
         alert("Room name occupied");
@@ -335,7 +322,9 @@ function onAnswer(answer) {
 }
 
 function onCanvasUpdate(data) {
-    avatars = data.avatars;
+    if (room) {
+        room.avatars = data.avatars;
+    }
 }
 
 // Sends data to WebSocket
@@ -370,16 +359,81 @@ function setDisabled(elements, disabled) {
     });
 }
 
+// Updates client UI based on given state
+function updateUI(state) {
+    switch (state) {
+        case "loggedout":
+            setDisabled([
+                msgInput, sendBtn, chatTxt,
+                joinCallBtn, leaveCallBtn, logoutBtn,
+                joinRoomInput, joinRoomBtn, leaveRoomBtn,
+                createRoomInput, createRoomBtn
+            ], true);
+
+            setDisabled([loginInput, loginBtn], false);
+            break;
+        case "loggedin":
+            setDisabled([
+                loginInput, loginBtn,
+                leaveRoomBtn, joinCallBtn
+            ], true);
+
+            setDisabled([
+                joinRoomInput, joinRoomBtn,
+                createRoomInput, createRoomBtn
+            ], false);
+
+            updateRoomUI();
+            break;
+        case "inroom":
+            setDisabled([
+                msgInput, sendBtn, chatTxt,
+                leaveRoomBtn
+            ], false);
+
+            setDisabled([
+                createRoomInput, createRoomBtn,
+                joinRoomInput, joinRoomBtn
+            ], true);
+
+            joinCallBtn.disabled = false;
+            leaveCallBtn.disabled = true;
+
+            updateRoomUI();
+            break;
+        case "incall":
+            joinCallBtn.disabled = true;
+            leaveCallBtn.disabled = false;
+            break;
+    }
+}
+
 // Updates room-relevant UI
 function updateRoomUI() {
-    roomLabel.textContent = roomId;
-    var usersString = "";
-    // Get users in room
-    var userList = room.users;
+    if (roomId) {
+        roomLabel.textContent = roomId;
+        var usersString = "";
+        // Get users in room
+        var userList = room.users;
 
-    userList.forEach((user) => {
-        usersString += user + ", ";
+        userList.forEach((user) => {
+            usersString += user + ", ";
+        });
+
+        usersLabel.textContent = usersString;
+    } else {
+        roomLabel.textContent = "";
+        usersLabel.textContent = "";
+    }
+}
+
+// Leaves the current room
+function leaveRoom() {
+    send({
+        type: "leaveRoom"
     });
 
-    usersLabel.textContent = usersString;
+    roomId = undefined;
+    room = undefined;
+    updateUI("loggedin");
 }
