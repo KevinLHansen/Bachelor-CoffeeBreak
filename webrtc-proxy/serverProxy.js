@@ -11,6 +11,7 @@ const conf = {
 
 var https = HttpsServer(conf);
 
+
 var wss = new WebSocketServer({ server: https });
 
 https.listen(port);
@@ -103,7 +104,6 @@ wss.on('connection', (connection) => {
 
             case "joinRoom":
                 if (rooms[data.roomId]) { // Check if room exists
-
                     // Add user to room
                     rooms[data.roomId].users.push(data.name);
                     // Add roomId association to user registry
@@ -126,6 +126,13 @@ wss.on('connection', (connection) => {
                         type: "joinRoom",
                         success: false
                     });
+                }
+                break;
+
+            case "leaveRoom":
+                if (rooms[users[data.name].roomId]) { // Check user is in room
+                    leaveRoom(data.name);
+                    removeAvatar(data.name);
                 }
                 break;
 
