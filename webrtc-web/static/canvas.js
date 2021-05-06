@@ -109,8 +109,6 @@ canvas.onmousemove = (event) => {
             startY = mouseY;
         }
 
-
-
         // Cursor hover styling
         room.avatars.forEach((avatar) => {
             if (isPointInRect(mouseX, mouseY, avatar)) {
@@ -138,6 +136,7 @@ function text(text, x, y, fill) {
     context.font = "12px Arial";
     context.textAlign = "center";
     context.fillText(text, x, y);
+    context.fill();
 }
 
 function isPointInRect(x, y, rect) {

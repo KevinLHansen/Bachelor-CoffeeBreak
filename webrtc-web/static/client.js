@@ -118,26 +118,20 @@ loginBtn.addEventListener("click", (event) => {
             navigator.getUserMedia({ video: false, audio: true }, (stream) => {
                 localStream = stream;
                 localConnection = new webkitRTCPeerConnection();
-                localConnection.addStream(localStream);
-
-                // When a stream is added to localConnection 
-
-                // localConnection.onaddstream = (event) => {
-                //     var audioElement = createAudioElement("", event.stream);
-                //     audioContainer.appendChild(audioElement);
-                // };
-
-                localConnection.addEventListener("track", (event) => {
-                    var audioElement = createAudioElement("", event.streams[0]);
-                    audioContainer.appendChild(audioElement);
+                localStream.getAudioTracks().forEach((track) => {
+                    localConnection.addTrack(track, localStream);
                 });
+
+                // When a stream is added to the connection
+                localConnection.ontrack = (event) => {
+                    var audioElement = createAudioElement("test", event.streams[0]);
+                    audioContainer.appendChild(createAudioElement("test", event.streams[0]));
+                }
 
             }, (error) => {
                 // Error
                 console.log(error);
             });
-
-
         } else {
             // Browser does not support WebRTC
             alert("Your browser does not support WebRTC")
@@ -200,8 +194,9 @@ sendBtn.addEventListener("click", (event) => {
 // Join call button
 joinCallBtn.addEventListener("click", (event) => {
 
-    var audioElement = createAudioElement(username, localStream);
-    audioContainer.appendChild(audioElement);
+    // Add own audio stream
+    // var audioElement = createAudioElement(username, localStream);
+    // audioContainer.appendChild(audioElement);
 
     updateUI("incall");
 
@@ -224,7 +219,8 @@ leaveCallBtn.addEventListener("click", (event) => {
 
     updateUI("inroom");
 
-    localConnection.setLocalDescription(null);
+    localConnection.removeTrack
+
     // Clear all audio elements
     audioContainer.innerHTML = "";
 });

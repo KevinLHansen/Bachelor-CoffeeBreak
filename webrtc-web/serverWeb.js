@@ -13,8 +13,6 @@ var server = express();
 
 server.use(requestIp.mw())
 
-
-
 // Certificate config
 const conf = {
     key: fs.readFileSync('cert/key.pem'),
@@ -26,7 +24,7 @@ server.use(express.static('static'));
 
 
 // Setup redirect server
-httpServer.get("/", function (req, res, next) {
+httpServer.get("/", function(req, res, next) {
     res.redirect("https://" + req.headers.host);
 });
 
@@ -44,4 +42,3 @@ http.createServer(httpServer).listen(http_port, function() {
 https.createServer(conf, server).listen(https_port, () => {
     console.log(`Webserver live at https://localhost:${https_port}`);
 });
-
