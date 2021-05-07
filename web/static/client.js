@@ -104,6 +104,19 @@ webSocket.onmessage = (message) => {
             console.log("[roomUpdate]: " + message.data);
 
             room = data.room; // Update room state
+
+            // Remove audio element of leaver
+            if (data.leaver) {
+                var audioElements = audioContainer.getElementsByTagName("audio");
+                for (i = 0; i < audioElements.length; i++) {
+                    var id = audioElements[i].getAttribute('id');
+                    if (id == data.leaver) {
+                        console.log(audioElements[i].innerHTML);
+                        audioElements[i].outerHTML = "";
+                    }
+                }
+            }
+
             // Update UI elements
             updateRoomUI();
             break;
@@ -119,6 +132,7 @@ webSocket.onmessage = (message) => {
             console.log("[canvasUpdate]: " + message.data);
             if (room) {
                 room.avatars = data.avatars;
+                updateVolumes();
             }
             break;
 
@@ -303,7 +317,21 @@ function createPeerConnection(user) {
             console.log("Track got");
 
             var stream = event.streams[0];
-            audioContainer.appendChild(createAudioElement(user, stream));
+            var audio = createAudioElement(user, stream);
+
+            // -- SMARTER SOLUTION (det duer ik) --
+            // var audioContext = new AudioContext();
+            // var src = audioContext.createMediaStreamSource(stream);
+
+            // var gainFilter = audioContext.createGain();
+            // gainFilter.gain.value = 0.5;
+            // // Connect filter to source
+            // src.connect(gainFilter);
+            // // Connect audio context destination to filter
+            // gainFilter.connect(audioContext.destination);
+
+            audioContainer.appendChild(audio);
+            updateVolumes();
         };
 
         // Add local stream to the connection
@@ -392,6 +420,82 @@ function updateRoomUI() {
         roomLabel.textContent = "";
         usersLabel.textContent = "";
     }
+}
+
+// Updates volumes of all audio elements according to avatar distance
+function updateVolumes() {
+    // Volume adjusting setting variables
+    var close = { threshold: 75, volume: 1 };
+    var medium = { threshold: 200, volume: 0.1 };
+    var far = { threshold: 350, volume: 0 };
+
+    if (room) {
+        // Get own avatar
+        ownAvatar = getAvatar(username);
+
+        // Get all audio elements in audio container
+        var audioElements = audioContainer.getElementsByTagName("audio");
+        for (i = 0; i < audioElements.length; i++) {
+            var audioElement = audioElements[i];
+
+            // Get id (user association) of element
+            var id = audioElement.getAttribute('id');
+
+            // Get avatar of associated user
+            var avatar = getAvatar(id);
+
+            // Get distance between avatars
+            var distance = getDistance(ownAvatar, avatar);
+            console.log("DIST: " + username + " <-> " + id + " = " + distance);
+
+            // Adjust volume of audio element
+            var volume;
+            if (distance >= far.threshold) { // "far" away
+                volume = far.volume;
+            } else if (distance >= medium.threshold) { // "medium" away
+                volume = medium.volume;
+            } else if (distance <= close.threshold) { // "close"
+                volume = close.volume;
+            } else { // in between
+                volume = convertRange(distance, {
+                    min: close.threshold,
+                    max: medium.threshold
+                }, {
+                    min: close.volume,
+                    max: medium.volume
+                });
+            }
+            audioElement.volume = volume;
+            console.log("VOLUME: " + volume);
+        }
+    }
+}
+
+// Returns the length of the direct vector between two avatars
+function getDistance(avatar1, avatar2) {
+    var vector = {
+        x: avatar1.x - avatar2.x,
+        y: avatar1.y - avatar2.y
+    };
+    // Pythagoras
+    var distance = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2));
+    return distance;
+}
+
+// Returns value convert from one range to another
+function convertRange(value, oldRange, newRange) {
+    return ((value - oldRange.min) * (newRange.max - newRange.min)) / (oldRange.max - oldRange.min) + newRange.min;
+}
+
+// Returns avatar object for given name in current room
+function getAvatar(name) {
+    var avatarGet;
+    room.avatars.forEach((avatar) => {
+        if (avatar.name == name) {
+            avatarGet = avatar;
+        }
+    });
+    return avatarGet;
 }
 
 // Leaves the current room

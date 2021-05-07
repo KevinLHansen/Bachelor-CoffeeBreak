@@ -28,6 +28,7 @@ function updateCanvasArea() {
             text(avatar.name, avatar.x + avatar.width / 2, avatar.y - 5, avatar.fill);
         });
     }
+    updateVolumes(); // WORKS but maybe harmful
     requestAnimationFrame(updateCanvasArea);
 }
 
@@ -96,7 +97,7 @@ canvas.onmousemove = (event) => {
             var deltaX = mouseX - startX;
             var deltaY = mouseY - startY;
 
-            // Move avatars marked as dragging (isDraggin = true)
+            // Move avatars marked as dragging (isDragging = true)
             room.avatars.forEach((avatar) => {
                 if (avatar.isDragging) {
                     avatar.x += deltaX;

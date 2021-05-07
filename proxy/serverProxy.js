@@ -27,7 +27,6 @@ rooms["t"] = {
     avatars: []
 };
 
-
 // The rooms object is structured as such:
 // rooms = {
 //     "exampleRoomId": {
@@ -260,20 +259,25 @@ function leaveRoom(username) {
         }
     }
 
-    sendRoomUpdate(roomId);
+    sendRoomUpdate(roomId, username);
 }
 
-function sendRoomUpdate(roomId) {
+function sendRoomUpdate(roomId, leaver) {
     // Get users in room
     var userList = rooms[roomId].users;
 
     userList.forEach((user) => {
         // Get connection of user
         var connection = users[user];
-        sendTo(connection, {
+        // Compose leave message
+        var msg = {
             type: "roomUpdate",
             room: rooms[roomId]
-        });
+        };
+        if (leaver) {
+            msg["leaver"] = leaver;
+        }
+        sendTo(connection, msg);
     });
 }
 
