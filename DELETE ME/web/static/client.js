@@ -164,7 +164,20 @@ function onIceCandidate(event) {
 
 function onTrack(event) {
     console.log("onTrack")
-    audioContainer.appendChild(createAudioElement("", event.streams[0]));
+
+    var stream = event.streams[0];
+
+    var audioContext = new AudioContext();
+    var src = audioContext.createMediaStreamSource(stream);
+
+    var gainFilter = audioContext.createGain();
+    gainFilter.gain.value = 2;
+    // Connect filter to source
+    src.connect(gainFilter);
+    // Connect audio context destination to filter
+    gainFilter.connect(audioContext.destination);
+
+    audioContainer.appendChild(createAudioElement("", stream));
 }
 
 // Sends data to WebSocket
