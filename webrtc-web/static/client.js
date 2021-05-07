@@ -9,7 +9,7 @@ var username = ""; // Own username
 var room; // Current room
 var roomId; // Current room ID
 var localStream; // Own MediaStream
-var localConnection; // Own RTCPeerConnection
+var peerConnections = []; // List of peer connections
 
 // UI elements
 
@@ -55,35 +55,96 @@ webSocket.onmessage = (message) => {
     switch (data.type) {
         case "login": // Login attempt response
             console.log("[login]: " + message.data);
-            onLogin(data.success);
+
+            if (data.success) {
+                console.log("User logged in: " + username);
+                updateUI("loggedin");
+            } else {
+                alert("Username taken");
+            }
             break;
-        case "createRoom":
-            console.log("[createRoom]: " + message.data);
-            onCreateRoom(data);
-            break;
+
         case "joinRoom":
             console.log("[joinRoom]: " + message.data);
-            onJoinRoom(data);
+
+            if (data.success) {
+                console.log("Room joined: " + data.roomId);
+                // Update room variables
+                room = data.room;
+                roomId = data.roomId;
+                // Update UI elements
+                joinRoomInput.value = "";
+                updateRoomUI();
+                updateUI("inroom");
+                // Send WebRTC offers
+                sendOffers();
+            } else {
+                alert("Invalid room name");
+            }
             break;
+
+        case "createRoom":
+            console.log("[createRoom]: " + message.data);
+
+            if (data.success) {
+                console.log("Room created: " + data.roomId);
+                // Update room variables
+                room = data.room;
+                roomId = data.roomId;
+                // Update UI elements
+                createRoomInput.value = "";
+                updateRoomUI();
+                updateUI("inroom");
+            } else {
+                alert("Room name occupied");
+            }
+            break;
+
         case "roomUpdate":
             console.log("[roomUpdate]: " + message.data);
-            onRoomUpdate(data);
+
+            room = data.room; // Update room state
+            // Update UI elements
+            updateRoomUI();
             break;
+
         case "chat": // Incoming chat
             console.log("[chat]: " + message.data);
-            onChat(data);
+
+            // Insert message in chatbox
+            chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value;
             break;
-        case "offer":
-            console.log("[offer]: " + data.name);
-            onOffer(data.offer, data.name);
-            break;
-        case "answer":
-            console.log("[answer]: " + data.name);
-            onAnswer(data.answer);
-            break;
+
         case "canvasUpdate":
             console.log("[canvasUpdate]: " + message.data);
-            onCanvasUpdate(data);
+            if (room) {
+                room.avatars = data.avatars;
+            }
+            break;
+
+        case "offer":
+            console.log("[offer]: " + data.answerer + " <- " + data.offerer);
+            sendAnswer(data.offerer, data.offer);
+            break;
+
+        case "answer":
+            console.log("[answer]: " + data.offerer + " <- " + data.answerer);
+            // Add the answer to matching peer connection(s)
+            peerConnections.forEach((peerConnection) => {
+                if (peerConnection.name == data.answerer) {
+                    peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+                }
+            });
+            break;
+
+        case "candidate":
+            console.log("[candidate]: " + data.name);
+            // Add the candidate to matching peer connections
+            peerConnections.forEach((peerConnection) => {
+                if (peerConnection.name == data.name) {
+                    peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            });
             break;
     }
 };
@@ -98,31 +159,13 @@ loginBtn.addEventListener("click", (event) => {
             canvas: { width: canvas.width, height: canvas.height }
         });
 
-        // WebRTC initiation
+        // WebRTC UserMedia initiation
 
-        if (hasUserMedia()) {
-            // Find function based on browser
-            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-
-            navigator.getUserMedia({ video: false, audio: true }, (stream) => {
-                localStream = stream;
-                localConnection = new webkitRTCPeerConnection();
-                localStream.getAudioTracks().forEach((track) => {
-                    localConnection.addTrack(track, localStream);
-                });
-
-                // When a stream is added to the connection
-                localConnection.ontrack = (event) => {
-                    audioContainer.appendChild(createAudioElement("test", event.streams[0]));
-                }
-            }, (error) => {
-                // Error
-                console.log(error);
-            });
-        } else {
-            // Browser does not support WebRTC
-            alert("Your browser does not support WebRTC")
-        }
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then((stream) => {
+            localStream = stream;
+        }).catch((error) => {
+            console.log("getUserMedia error: " + error);
+        });
     }
 });
 
@@ -136,18 +179,11 @@ joinRoomBtn.addEventListener("click", (event) => {
     if (joinRoomInput) {
         var roomId = joinRoomInput.value;
         console.log("Joining room: " + roomId);
-
-        localConnection.createOffer((offer) => {
-            // Send join room message to proxy server
-            send({
-                type: "joinRoom",
-                canvas: { width: canvas.width, height: canvas.height },
-                offer: offer,
-                roomId: roomId
-            });
-            localConnection.setLocalDescription(offer);
-        }, (error) => {
-            console.log("Error creating an offer");
+        // Send join room message to proxy server
+        send({
+            type: "joinRoom",
+            canvas: { width: canvas.width, height: canvas.height },
+            roomId: roomId
         });
     }
 });
@@ -201,102 +237,88 @@ sendBtn.addEventListener("click", (event) => {
     });
 });
 
-function onLogin(success) {
-    if (success) {
-        console.log("User logged in: " + username);
-
-        updateUI("loggedin");
-
-    } else {
-        alert("Username taken");
-    }
-}
-
-function onJoinRoom(data) {
-    if (data.success) {
-        console.log("Room joined: " + data.roomId);
-
-        room = data.room; // Save current room
-        // Update UI elements
-        joinRoomInput.value = "";
-        roomId = data.roomId;
-        updateRoomUI();
-        updateUI("inroom");
-    } else {
-        alert("Invalid room name");
-    }
-}
-
-function onCreateRoom(data) {
-    if (data.success) {
-        console.log("Room created: " + data.roomId);
-
-        // Update room variables
-        room = data.room;
-        roomId = data.roomId;
-        // Update UI elements
-        createRoomInput.value = "";
-
-        updateRoomUI();
-        updateUI("inroom");
-
-    } else {
-        alert("Room name occupied");
-    }
-}
-
-function onRoomUpdate(data) {
-    room = data.room; // Update room state
-    // Update UI elements
-    updateRoomUI();
-}
-
-function onChat(data) {
-    // Insert message in chatbox
-    chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value;
-}
-
-function onOffer(offer, name) {
-    localConnection.setRemoteDescription(new RTCSessionDescription(offer));
-
-    // Create answer to offer
-    localConnection.createAnswer((answer) => {
-        localConnection.setLocalDescription(answer);
-        send({
-            type: "answer",
-            answer: answer,
-            recipient: name
-        });
-    }, (error) => {
-        console.log("Error creating answer");
+// Sends offers to all other users in room
+function sendOffers() {
+    console.log("Sending offers");
+    room.users.forEach((user) => {
+        // Don't send to self
+        if (user !== username) {
+            var localConnection = createPeerConnection(user);
+            localConnection.createOffer().then((localDesc) => {
+                localConnection.setLocalDescription(localDesc);
+                send({
+                    type: "offer",
+                    offer: localDesc,
+                    offerer: username,
+                    answerer: user
+                });
+            });
+            // Add the peer connection to local list
+            peerConnections.push(localConnection);
+        }
     });
 }
 
-function onAnswer(answer) {
-    localConnection.setRemoteDescription(new RTCSessionDescription(answer));
+// Handles incoming offer and sends answer
+function sendAnswer(offerer, offer) {
+    console.log("Sending answer to: " + offerer);
+    var localConnection = createPeerConnection(offerer);
+    localConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    // Create answer to offer
+    localConnection.createAnswer().then((localDesc) => {
+        localConnection.setLocalDescription(localDesc);
+        // Send answer to offerer
+        send({
+            type: "answer",
+            answer: localDesc,
+            offerer: offerer,
+            answerer: username
+        });
+    });
+    // Add the peer connection to local list
+    peerConnections.push(localConnection);
 }
 
-function onCanvasUpdate(data) {
-    if (room) {
-        room.avatars = data.avatars;
+// Creates a RTCPeerConnection to given remote user
+function createPeerConnection(user) {
+    try {
+        var localConnection = new RTCPeerConnection();
+        // Set association name
+        localConnection.name = user;
+
+        // Set event handlers
+        localConnection.onicecandidate = (event) => {
+            console.log("ICE candidate got");
+
+            // Send the candidate
+            if (event.candidate) {
+                send({
+                    type: "candidate",
+                    candidate: event.candidate,
+                    name: username
+                });
+            }
+        };
+        localConnection.ontrack = (event) => {
+            console.log("Track got");
+
+            var stream = event.streams[0];
+            audioContainer.appendChild(createAudioElement(user, stream));
+        };
+
+        // Add local stream to the connection
+        localStream.getAudioTracks().forEach((track) => {
+            localConnection.addTrack(track, localStream);
+        });
+
+        return localConnection;
+    } catch (error) {
+        console.log("Error creating peer connection: " + error);
     }
+
 }
 
-// Sends data to WebSocket
-function send(message) {
-    message.name = username;
-    webSocket.send(JSON.stringify(message));
-}
-
-// Checks whether browser supports WebRTC
-function hasUserMedia() {
-    return !!(
-        navigator.getUserMedia || // Safari, Edge, etc.
-        navigator.webkitGetUserMedia || // Chrome
-        navigator.mozGetUserMedia // Firefox
-    );
-}
-
+// Creates a DOM audio element for appendage to HTML page
 function createAudioElement(username, mediaStream) {
     var audioElement = document.createElement("audio");
     audioElement.id = username;
@@ -334,6 +356,7 @@ function updateUI(state) {
                 createRoomInput, createRoomBtn
             ], false);
 
+            audioContainer.innerHTML = "";
             updateRoomUI();
             break;
         case "inroom":
@@ -379,5 +402,18 @@ function leaveRoom() {
 
     roomId = undefined;
     room = undefined;
+    // Close all peer connections
+    peerConnections.forEach((peerConnection) => {
+        peerConnection.close();
+    });
+    // Clear peer connections list
+    peerConnections = [];
+
     updateUI("loggedin");
+}
+
+// Sends data to WebSocket
+function send(message) {
+    message.name = username;
+    webSocket.send(JSON.stringify(message));
 }

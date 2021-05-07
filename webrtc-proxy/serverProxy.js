@@ -77,6 +77,35 @@ wss.on('connection', (connection) => {
                 }
                 break;
 
+            case "joinRoom":
+                console.log("[joinRoom]: " + data.name + " -> " + data.roomId);
+
+                if (rooms[data.roomId]) { // Check if room exists
+                    // Add user to room
+                    rooms[data.roomId].users.push(data.name);
+                    // Add roomId association to user registry
+                    users[data.name].roomId = data.roomId;
+                    console.log("User: " + data.name + " joined room: " + data.roomId);
+
+                    // Respond to joiner
+                    sendTo(connection, {
+                        type: "joinRoom",
+                        roomId: data.roomId,
+                        room: rooms[data.roomId],
+                        success: true
+                    });
+
+                    // Notify other users in the room
+                    createAvatar(data);
+                    sendRoomUpdate(data.roomId);
+                } else {
+                    sendTo(connection, {
+                        type: "joinRoom",
+                        success: false
+                    });
+                }
+                break;
+
             case "createRoom":
                 console.log("[createRoom]: " + message);
 
@@ -108,38 +137,6 @@ wss.on('connection', (connection) => {
                 }
                 break;
 
-            case "joinRoom":
-                console.log("[joinRoom]: " + data.name + " -> " + data.roomId);
-
-                if (rooms[data.roomId]) { // Check if room exists
-                    // Add user to room
-                    rooms[data.roomId].users.push(data.name);
-                    // Add roomId association to user registry
-                    users[data.name].roomId = data.roomId;
-                    console.log("User: " + data.name + " joined room: " + data.roomId);
-
-                    // Respond to joiner
-                    sendTo(connection, {
-                        type: "joinRoom",
-                        roomId: data.roomId,
-                        room: rooms[data.roomId],
-                        success: true
-                    });
-
-                    // Notify other users in the room
-                    createAvatar(data);
-                    sendRoomUpdate(data.roomId);
-
-                    // Relay offer to all users in room
-                    relayOffer(data.offer, data.roomId, data.name);
-                } else {
-                    sendTo(connection, {
-                        type: "joinRoom",
-                        success: false
-                    });
-                }
-                break;
-
             case "leaveRoom":
                 console.log("[leaveRoom]: " + message);
 
@@ -159,17 +156,6 @@ wss.on('connection', (connection) => {
                 });
                 break;
 
-            case "offer":
-                console.log("[offer]: " + data.name);
-                // Relay offer to all other users
-                relayOffer(data.offer, data.roomId, data.name);
-                break;
-
-            case "answer":
-                console.log("[answer]: " + data.name + " -> " + data.recipient);
-                sendTo(users[data.recipient], data);
-                break;
-
             case "canvasUpdate":
                 console.log("Canvas update received from: " + data.name);
                 // Update room avatars on server
@@ -179,6 +165,30 @@ wss.on('connection', (connection) => {
                 // Relay canvas update to all users
                 userList.forEach((user) => {
                     sendTo(users[user], data);
+                });
+                break;
+
+            case "offer":
+                console.log("[offer]: " + data.offerer + " -> " + data.answerer);
+                // Relay offer to answerer
+                sendTo(users[data.answerer], data);
+                break;
+
+            case "answer":
+                console.log("[answer]: " + data.offerer + " <- " + data.answerer);
+                // Relay answer to offerer
+                sendTo(users[data.offerer], data);
+                break;
+
+            case "candidate":
+                console.log("[candidate]: " + data.name);
+                // Get users in room
+                var userList = rooms[users[data.name].roomId].users;
+                // Relay candidate to all users except self
+                userList.forEach((user) => {
+                    if (user != data.name) {
+                        sendTo(users[user], data);
+                    }
                 });
                 break;
 
