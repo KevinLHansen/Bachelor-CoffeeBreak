@@ -11,6 +11,11 @@ var roomId; // Current room ID
 var localStream; // Own MediaStream
 var peerConnections = []; // List of peer connections
 
+// Config for dynamic volume levels
+var close = { threshold: 75, volume: 1 };
+var medium = { threshold: 200, volume: 0.1 };
+var far = { threshold: 400, volume: 0 };
+
 // UI elements
 
 var loginInput = document.getElementById("loginInput");
@@ -424,11 +429,6 @@ function updateRoomUI() {
 
 // Updates volumes of all audio elements according to avatar distance
 function updateVolumes() {
-    // Volume adjusting setting variables
-    var close = { threshold: 75, volume: 1 };
-    var medium = { threshold: 200, volume: 0.1 };
-    var far = { threshold: 350, volume: 0 };
-
     if (room) {
         // Get own avatar
         ownAvatar = getAvatar(username);
@@ -446,7 +446,7 @@ function updateVolumes() {
 
             // Get distance between avatars
             var distance = getDistance(ownAvatar, avatar);
-            console.log("DIST: " + username + " <-> " + id + " = " + distance);
+            //console.log("DIST: " + username + " <-> " + id + " = " + distance);
 
             // Adjust volume of audio element
             var volume;
@@ -466,7 +466,7 @@ function updateVolumes() {
                 });
             }
             audioElement.volume = volume;
-            console.log("VOLUME: " + volume);
+            //console.log("VOLUME: " + volume);
         }
     }
 }

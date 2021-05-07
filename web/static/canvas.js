@@ -16,19 +16,30 @@ function updateCanvasArea() {
     // Clear the canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw rects in list
     if (room) {
+        // Draw "hearing range" indicators
+        context.globalAlpha = 0.05;
+        room.avatars.forEach((avatar) => {
+            if (avatar.name === username) {
+                circle(avatar.x, avatar.y, far.threshold, "#f6ff00");
+                circle(avatar.x, avatar.y, medium.threshold, "#00fbff");
+                circle(avatar.x, avatar.y, close.threshold, "#00ff00");
+            }
+        });
+        context.globalAlpha = 1;
+
+        // Draw avatars
         room.avatars.forEach((avatar) => {
             // Highlight own avatar
             if (avatar.name === username) {
-                rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, true);
+                rect(avatar.x - avatar.width / 2, avatar.y - avatar.height / 2, avatar.width, avatar.height, avatar.fill, true);
             } else {
-                rect(avatar.x, avatar.y, avatar.width, avatar.height, avatar.fill, false);
+                rect(avatar.x - avatar.width / 2, avatar.y - avatar.height / 2, avatar.width, avatar.height, avatar.fill, false);
             }
-            text(avatar.name, avatar.x + avatar.width / 2, avatar.y - 5, avatar.fill);
+            text(avatar.name, avatar.x, avatar.y - 15, avatar.fill);
         });
     }
-    updateVolumes(); // WORKS but maybe harmful
+    //updateVolumes(); // WORKS but maybe harmful
     requestAnimationFrame(updateCanvasArea);
 }
 
@@ -112,12 +123,12 @@ canvas.onmousemove = (event) => {
 
         // Cursor hover styling
         room.avatars.forEach((avatar) => {
-            if (isPointInRect(mouseX, mouseY, avatar)) {
-                if (avatar.name === username) {
+            if (avatar.name == username) {
+                if (isPointInRect(mouseX, mouseY, avatar)) {
                     canvas.style.cursor = "pointer";
+                } else {
+                    canvas.style.cursor = "default";
                 }
-            } else {
-                canvas.style.cursor = "default";
             }
         });
     }
@@ -132,16 +143,28 @@ function rect(x, y, width, height, fill, stroke) {
     if (stroke) { context.stroke(); }
 }
 
+function circle(x, y, radius, fill) {
+    context.fillStyle = fill;
+    context.beginPath();
+    context.arc(x, y, radius, 0, 2 * Math.PI);
+    context.closePath();
+    context.fill();
+}
+
 function text(text, x, y, fill) {
     context.fillStyle = fill;
     context.font = "12px Arial";
     context.textAlign = "center";
     context.fillText(text, x, y);
-    context.fill();
 }
 
 function isPointInRect(x, y, rect) {
-    if (x > rect.x && x < rect.x + rect.width && y > rect.y && y < rect.y + rect.height) {
+    if (
+        x > rect.x - rect.width / 2 &&
+        x < rect.x + rect.width / 2 &&
+        y > rect.y - rect.height / 2 &&
+        y < rect.y + rect.height / 2
+    ) {
         return true;
     } else {
         return false;
