@@ -29,9 +29,6 @@ var sendBtn = document.getElementById("sendBtn");
 
 var chatTxt = document.getElementById("chatTxt");
 
-var joinCallBtn = document.getElementById("joinCallBtn");
-var leaveCallBtn = document.getElementById("leaveCallBtn");
-
 var roomLabel = document.getElementById("roomLabel");
 var usersLabel = document.getElementById("usersLabel");
 
@@ -55,45 +52,37 @@ webSocket.onmessage = (message) => {
     // Parse message data from JSON
     var data = JSON.parse(message.data);
 
-    // Exclude types which flood the console
-    if (
-        data.type !== "offer" &&
-        data.type !== "answer" &&
-        data.type !== "canvasUpdate" &&
-        data.type !== "createRoom" &&
-        data.type !== "joinRoom" //&&
-        //data.type !== "roomUpdate"
-    ) {
-        console.log("Message received: " + message.data);
-    }
-
     switch (data.type) {
         case "login": // Login attempt response
+            console.log("[login]: " + message.data);
             onLogin(data.success);
             break;
         case "createRoom":
+            console.log("[createRoom]: " + message.data);
             onCreateRoom(data);
             break;
         case "joinRoom":
+            console.log("[joinRoom]: " + message.data);
             onJoinRoom(data);
             break;
         case "roomUpdate":
-            console.log("Room update received");
+            console.log("[roomUpdate]: " + message.data);
             onRoomUpdate(data);
             break;
         case "chat": // Incoming chat
+            console.log("[chat]: " + message.data);
             onChat(data);
             break;
         case "offer":
-            console.log("Offer received from: " + data.name);
+            console.log("[offer]: " + data.name);
             onOffer(data.offer, data.name);
             break;
         case "answer":
-            console.log("Answer received from: " + data.name);
+            console.log("[answer]: " + data.name);
             onAnswer(data.answer);
             break;
         case "canvasUpdate":
-            console.log("Canvas update received from " + data.name);
+            console.log("[canvasUpdate]: " + message.data);
             onCanvasUpdate(data);
             break;
     }
@@ -124,10 +113,8 @@ loginBtn.addEventListener("click", (event) => {
 
                 // When a stream is added to the connection
                 localConnection.ontrack = (event) => {
-                    var audioElement = createAudioElement("test", event.streams[0]);
                     audioContainer.appendChild(createAudioElement("test", event.streams[0]));
                 }
-
             }, (error) => {
                 // Error
                 console.log(error);
@@ -149,11 +136,18 @@ joinRoomBtn.addEventListener("click", (event) => {
     if (joinRoomInput) {
         var roomId = joinRoomInput.value;
         console.log("Joining room: " + roomId);
-        // Send join room message to proxy server
-        send({
-            type: "joinRoom",
-            canvas: { width: canvas.width, height: canvas.height },
-            roomId: roomId
+
+        localConnection.createOffer((offer) => {
+            // Send join room message to proxy server
+            send({
+                type: "joinRoom",
+                canvas: { width: canvas.width, height: canvas.height },
+                offer: offer,
+                roomId: roomId
+            });
+            localConnection.setLocalDescription(offer);
+        }, (error) => {
+            console.log("Error creating an offer");
         });
     }
 });
@@ -189,40 +183,6 @@ sendBtn.addEventListener("click", (event) => {
         });
         msgInput.value = "";
     }
-});
-
-// Join call button
-joinCallBtn.addEventListener("click", (event) => {
-
-    // Add own audio stream
-    // var audioElement = createAudioElement(username, localStream);
-    // audioContainer.appendChild(audioElement);
-
-    updateUI("incall");
-
-    localConnection.createOffer((offer) => {
-        send({
-            type: "offer",
-            offer: offer
-        });
-        localConnection.setLocalDescription(offer);
-    }, (error) => {
-        console.log("Error creating an offer");
-    });
-}, (error) => {
-    // Error
-    console.log(error);
-});
-
-// Leave call button
-leaveCallBtn.addEventListener("click", (event) => {
-
-    updateUI("inroom");
-
-    localConnection.removeTrack
-
-    // Clear all audio elements
-    audioContainer.innerHTML = "";
 });
 
 // Add keyup eventListeners to elements which need them ([input, button])
@@ -262,7 +222,6 @@ function onJoinRoom(data) {
         roomId = data.roomId;
         updateRoomUI();
         updateUI("inroom");
-
     } else {
         alert("Invalid room name");
     }
@@ -360,8 +319,7 @@ function updateUI(state) {
     switch (state) {
         case "loggedout":
             setDisabled([
-                msgInput, sendBtn, chatTxt,
-                joinCallBtn, leaveCallBtn, logoutBtn,
+                msgInput, sendBtn, chatTxt, logoutBtn,
                 joinRoomInput, joinRoomBtn, leaveRoomBtn,
                 createRoomInput, createRoomBtn
             ], true);
@@ -369,10 +327,7 @@ function updateUI(state) {
             setDisabled([loginInput, loginBtn], false);
             break;
         case "loggedin":
-            setDisabled([
-                loginInput, loginBtn,
-                leaveRoomBtn, joinCallBtn
-            ], true);
+            setDisabled([loginInput, loginBtn], true);
 
             setDisabled([
                 joinRoomInput, joinRoomBtn,
@@ -392,14 +347,7 @@ function updateUI(state) {
                 joinRoomInput, joinRoomBtn
             ], true);
 
-            joinCallBtn.disabled = false;
-            leaveCallBtn.disabled = true;
-
             updateRoomUI();
-            break;
-        case "incall":
-            joinCallBtn.disabled = true;
-            leaveCallBtn.disabled = false;
             break;
     }
 }

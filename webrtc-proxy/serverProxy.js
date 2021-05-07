@@ -20,6 +20,13 @@ console.log(`Proxy server live at https://localhost:${port}`);
 
 var users = {}; // Key-value pairs of username:connection
 var rooms = {}; // Key-value pairs of roomId:{owner:"", users:{}, avatars:[]}
+// Test room - TEMP
+rooms["t"] = {
+    owner: "",
+    users: [],
+    avatars: []
+};
+
 
 // The rooms object is structured as such:
 // rooms = {
@@ -49,13 +56,10 @@ wss.on('connection', (connection) => {
             data = {};
         }
 
-        // Exclude types which flood the console
-        if (data.type !== "offer" && data.type !== "answer" && data.type !== "canvasUpdate") {
-            console.log("Message received: " + message);
-        }
-
         switch (data.type) {
             case "login":
+                console.log("[login]: " + message);
+
                 if (users[data.name]) { // Check if user already exists / is logged in
                     sendTo(connection, {
                         type: "login",
@@ -74,6 +78,8 @@ wss.on('connection', (connection) => {
                 break;
 
             case "createRoom":
+                console.log("[createRoom]: " + message);
+
                 if (rooms[data.roomId]) { // Check if roomId already exists
                     sendTo(connection, {
                         type: "createRoom",
@@ -103,6 +109,8 @@ wss.on('connection', (connection) => {
                 break;
 
             case "joinRoom":
+                console.log("[joinRoom]: " + data.name + " -> " + data.roomId);
+
                 if (rooms[data.roomId]) { // Check if room exists
                     // Add user to room
                     rooms[data.roomId].users.push(data.name);
@@ -121,6 +129,9 @@ wss.on('connection', (connection) => {
                     // Notify other users in the room
                     createAvatar(data);
                     sendRoomUpdate(data.roomId);
+
+                    // Relay offer to all users in room
+                    relayOffer(data.offer, data.roomId, data.name);
                 } else {
                     sendTo(connection, {
                         type: "joinRoom",
@@ -130,6 +141,8 @@ wss.on('connection', (connection) => {
                 break;
 
             case "leaveRoom":
+                console.log("[leaveRoom]: " + message);
+
                 if (rooms[users[data.name].roomId]) { // Check user is in room
                     leaveRoom(data.name);
                     removeAvatar(data.name);
@@ -137,7 +150,7 @@ wss.on('connection', (connection) => {
                 break;
 
             case "chat":
-                console.log("Chat received: " + data.name + ": " + data.message);
+                console.log("[chat]: " + message);
                 // Get users in room
                 var userList = rooms[users[data.name].roomId].users;
                 // Relay chat message to all users
@@ -147,19 +160,13 @@ wss.on('connection', (connection) => {
                 break;
 
             case "offer":
-                console.log("Offer received from: " + data.name);
+                console.log("[offer]: " + data.name);
                 // Relay offer to all other users
-                for (user in users) {
-                    // Exclude sender
-                    if (users[user].name !== data.name) {
-                        sendTo(users[user], data);
-                    }
-                }
+                relayOffer(data.offer, data.roomId, data.name);
                 break;
 
             case "answer":
-                console.log("Answer received from: " + data.name + " answering to: " + data.recipient);
-                // Relay answer to intended recipient
+                console.log("[answer]: " + data.name + " -> " + data.recipient);
                 sendTo(users[data.recipient], data);
                 break;
 
@@ -176,6 +183,7 @@ wss.on('connection', (connection) => {
                 break;
 
             default:
+                console.log("[error]: " + message);
                 sendTo(connection, {
                     type: "error",
                     message: "Command not found: " + data.type
@@ -270,6 +278,21 @@ function sendCanvasUpdate() {
             });
         }
     }
+}
+
+// Relays an offer to all users of a given room
+function relayOffer(offer, roomId, sender) {
+    // Relay offer to all users in room
+    rooms[roomId].users.forEach((user) => {
+        // Exclude sender
+        if (user !== sender) {
+            sendTo(users[user], {
+                type: "offer",
+                name: sender,
+                offer: offer
+            });
+        }
+    });
 }
 
 // Utility functions
