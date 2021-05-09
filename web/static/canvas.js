@@ -27,16 +27,18 @@ function updateCanvasArea() {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     if (room) {
-        // Draw "hearing range" indicators
-        context.globalAlpha = 0.05;
-        room.avatars.forEach((avatar) => {
-            if (avatar.name === username) {
-                circle(avatar.x, avatar.y, far.threshold, "#f6ff00");
-                circle(avatar.x, avatar.y, medium.threshold, "#00fbff");
-                circle(avatar.x, avatar.y, close.threshold, "#00ff00");
-            }
-        });
-        context.globalAlpha = 1;
+        if (drawHearingRange) {
+            // Draw "hearing range" indicators
+            context.globalAlpha = 0.05;
+            room.avatars.forEach((avatar) => {
+                if (avatar.name === username) {
+                    circle(avatar.x, avatar.y, far.threshold, "#f6ff00");
+                    circle(avatar.x, avatar.y, medium.threshold, "#00fbff");
+                    circle(avatar.x, avatar.y, close.threshold, "#00ff00");
+                }
+            });
+            context.globalAlpha = 1;
+        }
 
         // Draw avatars
         room.avatars.forEach((avatar) => {
@@ -146,7 +148,6 @@ canvas.onmousemove = (event) => {
 
 toggleDrawHearingRangeBtn.addEventListener("click", (event) => {
     drawHearingRange = !drawHearingRange; // Toggle the boolean
-    log(drawHearingRange);
 });
 
 function rect(x, y, width, height, fill, stroke) {
