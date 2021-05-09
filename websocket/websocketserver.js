@@ -316,5 +316,5 @@ function sendTo(connection, message) {
 }
 
 function log(data) {
-    console.log(`[${(process.uptime()).toFixed(2)}]\t ${data}`);
+    console.log(`[${(process.uptime()).toFixed(2)}]  \t ${data}`);
 }

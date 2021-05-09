@@ -524,5 +524,5 @@ function send(message) {
 
 // Simpler log function
 function log(data) {
-    console.log(`[${(performance.now() / 1000).toFixed(2)}]\t ${data}`);
+    console.log(`[${(performance.now() / 1000).toFixed(2)}]  \t ${data}`);
 }
