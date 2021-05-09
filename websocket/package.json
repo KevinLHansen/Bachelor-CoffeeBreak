@@ -1,8 +1,8 @@
 {
-    "name": "coffeebreak",
+    "name": "CoffeeBreak-WebSocket",
     "version": "1.0.0",
     "description": "",
-    "main": "index.js",
+    "main": "websocketserver.js",
     "dependencies": {
         "concurrently": "^6.0.2",
         "express": "^4.17.1",
@@ -13,8 +13,8 @@
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node serverProxy.js",
-        "devStart": "nodemon serverProxy.js"
+        "start": "node websocketserver.js",
+        "devStart": "nodemon websocketserver.js"
     },
     "author": "",
     "license": "ISC"
