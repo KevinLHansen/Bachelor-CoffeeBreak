@@ -1,9 +1,19 @@
+// Canvas-related variables
+
 var canvas = document.querySelector("canvas");
 var canvasBounding = canvas.getBoundingClientRect();
 var context = canvas.getContext("2d");
 
 var offsetX = canvasBounding.left;
 var offsetY = canvasBounding.top;
+
+// Variables
+
+var drawHearingRange = false;
+
+// UI elements
+
+var toggleDrawHearingRangeBtn = document.getElementById("toggleDrawHearingRangeBtn");
 
 // Dragging
 var isDragging = false;
@@ -133,6 +143,11 @@ canvas.onmousemove = (event) => {
         });
     }
 }
+
+toggleDrawHearingRangeBtn.addEventListener("click", (event) => {
+    drawHearingRange = !drawHearingRange; // Toggle the boolean
+    log(drawHearingRange);
+});
 
 function rect(x, y, width, height, fill, stroke) {
     context.fillStyle = fill;

@@ -45,12 +45,12 @@ updateUI("loggedout");
 
 if (!webSocket) { // Connect WebSocket if not already
     var url = `${serverIP}:${serverPort}`;
-    console.log(`Client connecting to WebSocket: ${url}`);
+    log(`Client connecting to WebSocket: ${url}`);
     webSocket = new WebSocket(`wss://${url}`);
 }
 
 webSocket.onopen = () => {
-    console.log("Client connected to WebSocket");
+    log("Client connected to WebSocket");
 };
 
 webSocket.onmessage = (message) => {
@@ -59,10 +59,10 @@ webSocket.onmessage = (message) => {
 
     switch (data.type) {
         case "login": // Login attempt response
-            console.log("[login]: " + message.data);
+            log("[login]: " + message.data);
 
             if (data.success) {
-                console.log("User logged in: " + username);
+                log("User logged in: " + username);
                 updateUI("loggedin");
             } else {
                 alert("Username taken");
@@ -70,10 +70,10 @@ webSocket.onmessage = (message) => {
             break;
 
         case "joinRoom":
-            console.log("[joinRoom]: " + message.data);
+            log("[joinRoom]: " + message.data);
 
             if (data.success) {
-                console.log("Room joined: " + data.roomId);
+                log("Room joined: " + data.roomId);
                 // Update room variables
                 room = data.room;
                 roomId = data.roomId;
@@ -89,10 +89,10 @@ webSocket.onmessage = (message) => {
             break;
 
         case "createRoom":
-            console.log("[createRoom]: " + message.data);
+            log("[createRoom]: " + message.data);
 
             if (data.success) {
-                console.log("Room created: " + data.roomId);
+                log("Room created: " + data.roomId);
                 // Update room variables
                 room = data.room;
                 roomId = data.roomId;
@@ -106,7 +106,7 @@ webSocket.onmessage = (message) => {
             break;
 
         case "roomUpdate":
-            console.log("[roomUpdate]: " + message.data);
+            log("[roomUpdate]: " + message.data);
 
             room = data.room; // Update room state
 
@@ -116,7 +116,7 @@ webSocket.onmessage = (message) => {
                 for (i = 0; i < audioElements.length; i++) {
                     var id = audioElements[i].getAttribute('id');
                     if (id == data.leaver) {
-                        console.log(audioElements[i].innerHTML);
+                        log(audioElements[i].innerHTML);
                         audioElements[i].outerHTML = "";
                     }
                 }
@@ -127,14 +127,14 @@ webSocket.onmessage = (message) => {
             break;
 
         case "chat": // Incoming chat
-            console.log("[chat]: " + message.data);
+            log("[chat]: " + message.data);
 
             // Insert message in chatbox
             chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value;
             break;
 
         case "canvasUpdate":
-            console.log("[canvasUpdate]: " + message.data);
+            log("[canvasUpdate]: " + message.data);
             if (room) {
                 room.avatars = data.avatars;
                 updateVolumes();
@@ -142,12 +142,12 @@ webSocket.onmessage = (message) => {
             break;
 
         case "offer":
-            console.log("[offer]: " + data.answerer + " <- " + data.offerer);
+            log("[offer]: " + data.answerer + " <- " + data.offerer);
             sendAnswer(data.offerer, data.offer);
             break;
 
         case "answer":
-            console.log("[answer]: " + data.offerer + " <- " + data.answerer);
+            log("[answer]: " + data.offerer + " <- " + data.answerer);
             // Add the answer to matching peer connection(s)
             peerConnections.forEach((peerConnection) => {
                 if (peerConnection.name == data.answerer) {
@@ -157,7 +157,7 @@ webSocket.onmessage = (message) => {
             break;
 
         case "candidate":
-            console.log("[candidate]: " + data.name);
+            log("[candidate]: " + data.name);
             // Add the candidate to matching peer connections
             peerConnections.forEach((peerConnection) => {
                 if (peerConnection.name == data.name) {
@@ -183,7 +183,7 @@ loginBtn.addEventListener("click", (event) => {
         navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then((stream) => {
             localStream = stream;
         }).catch((error) => {
-            console.log("getUserMedia error: " + error);
+            log("getUserMedia error: " + error);
         });
     }
 });
@@ -197,7 +197,7 @@ logoutBtn.addEventListener("click", (event) => {
 joinRoomBtn.addEventListener("click", (event) => {
     if (joinRoomInput) {
         var roomId = joinRoomInput.value;
-        console.log("Joining room: " + roomId);
+        log("Joining room: " + roomId);
         // Send join room message to proxy server
         send({
             type: "joinRoom",
@@ -216,7 +216,7 @@ leaveRoomBtn.addEventListener("click", (event) => {
 createRoomBtn.addEventListener("click", (event) => {
     if (createRoomInput) {
         var roomId = createRoomInput.value;
-        console.log("Creating room: " + roomId);
+        log("Creating room: " + roomId);
         // Send create room message to proxy server
         send({
             type: "createRoom",
@@ -230,7 +230,7 @@ createRoomBtn.addEventListener("click", (event) => {
 sendBtn.addEventListener("click", (event) => {
     if (msgInput.value) {
         var msg = msgInput.value;
-        console.log("Sending chat message: " + msg);
+        log("Sending chat message: " + msg);
         // Send message to proxy server
         send({
             type: "chat",
@@ -258,7 +258,7 @@ sendBtn.addEventListener("click", (event) => {
 
 // Sends offers to all other users in room
 function sendOffers() {
-    console.log("Sending offers");
+    log("Sending offers");
     room.users.forEach((user) => {
         // Don't send to self
         if (user !== username) {
@@ -280,7 +280,7 @@ function sendOffers() {
 
 // Handles incoming offer and sends answer
 function sendAnswer(offerer, offer) {
-    console.log("Sending answer to: " + offerer);
+    log("Sending answer to: " + offerer);
     var localConnection = createPeerConnection(offerer);
     localConnection.setRemoteDescription(new RTCSessionDescription(offer));
     // Create answer to offer
@@ -307,7 +307,7 @@ function createPeerConnection(user) {
 
         // Set event handlers
         localConnection.onicecandidate = (event) => {
-            console.log("ICE candidate got");
+            log("ICE candidate got");
 
             // Send the candidate
             if (event.candidate) {
@@ -319,7 +319,7 @@ function createPeerConnection(user) {
             }
         };
         localConnection.ontrack = (event) => {
-            console.log("Track got");
+            log("Track got");
 
             var stream = event.streams[0];
             var audio = createAudioElement(user, stream);
@@ -346,7 +346,7 @@ function createPeerConnection(user) {
 
         return localConnection;
     } catch (error) {
-        console.log("Error creating peer connection: " + error);
+        log("Error creating peer connection: " + error);
     }
 
 }
@@ -446,7 +446,7 @@ function updateVolumes() {
 
             // Get distance between avatars
             var distance = getDistance(ownAvatar, avatar);
-            //console.log("DIST: " + username + " <-> " + id + " = " + distance);
+            //log("DIST: " + username + " <-> " + id + " = " + distance);
 
             // Adjust volume of audio element
             var volume;
@@ -466,7 +466,7 @@ function updateVolumes() {
                 });
             }
             audioElement.volume = volume;
-            //console.log("VOLUME: " + volume);
+            //log("VOLUME: " + volume);
         }
     }
 }
@@ -520,4 +520,9 @@ function leaveRoom() {
 function send(message) {
     message.name = username;
     webSocket.send(JSON.stringify(message));
+}
+
+// Simpler log function
+function log(data) {
+    console.log(`[${(performance.now() / 1000).toFixed(2)}]\t ${data}`);
 }

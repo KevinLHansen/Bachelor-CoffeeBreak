@@ -16,7 +16,7 @@ var wss = new WebSocketServer({ server: https });
 
 https.listen(port);
 
-console.log(`Proxy server live at https://localhost:${port}`);
+log(`Proxy server live at https://localhost:${port}`);
 
 var users = {}; // Key-value pairs of username:connection
 var rooms = {}; // Key-value pairs of roomId:{owner:"", users:{}, avatars:[]}
@@ -43,7 +43,7 @@ rooms["t"] = {
 // }
 
 wss.on('connection', (connection) => {
-    console.log("Connection received");
+    log("Connection received");
 
     connection.on('message', (message) => {
         var data;
@@ -51,13 +51,13 @@ wss.on('connection', (connection) => {
         try {
             data = JSON.parse(message);
         } catch (e) {
-            console.log("Invalid JSON");
+            log("Invalid JSON");
             data = {};
         }
 
         switch (data.type) {
             case "login":
-                console.log("[login]: " + message);
+                log("[login]: " + message);
 
                 if (users[data.name]) { // Check if user already exists / is logged in
                     sendTo(connection, {
@@ -72,19 +72,19 @@ wss.on('connection', (connection) => {
                         type: "login",
                         success: true
                     });
-                    console.log("User logged: " + data.name);
+                    log("User logged: " + data.name);
                 }
                 break;
 
             case "joinRoom":
-                console.log("[joinRoom]: " + data.name + " -> " + data.roomId);
+                log("[joinRoom]: " + data.name + " -> " + data.roomId);
 
                 if (rooms[data.roomId]) { // Check if room exists
                     // Add user to room
                     rooms[data.roomId].users.push(data.name);
                     // Add roomId association to user registry
                     users[data.name].roomId = data.roomId;
-                    console.log("User: " + data.name + " joined room: " + data.roomId);
+                    log("User: " + data.name + " joined room: " + data.roomId);
 
                     // Respond to joiner
                     sendTo(connection, {
@@ -106,7 +106,7 @@ wss.on('connection', (connection) => {
                 break;
 
             case "createRoom":
-                console.log("[createRoom]: " + message);
+                log("[createRoom]: " + message);
 
                 if (rooms[data.roomId]) { // Check if roomId already exists
                     sendTo(connection, {
@@ -132,12 +132,12 @@ wss.on('connection', (connection) => {
                         room: rooms[data.roomId],
                         success: true
                     });
-                    console.log("Room created: " + data.roomId);
+                    log("Room created: " + data.roomId);
                 }
                 break;
 
             case "leaveRoom":
-                console.log("[leaveRoom]: " + message);
+                log("[leaveRoom]: " + message);
 
                 if (rooms[users[data.name].roomId]) { // Check user is in room
                     leaveRoom(data.name);
@@ -146,7 +146,7 @@ wss.on('connection', (connection) => {
                 break;
 
             case "chat":
-                console.log("[chat]: " + message);
+                log("[chat]: " + message);
                 // Get users in room
                 var userList = rooms[users[data.name].roomId].users;
                 // Relay chat message to all users
@@ -156,7 +156,7 @@ wss.on('connection', (connection) => {
                 break;
 
             case "canvasUpdate":
-                console.log("Canvas update received from: " + data.name);
+                log("Canvas update received from: " + data.name);
                 // Update room avatars on server
                 rooms[users[data.name].roomId].avatars = data.avatars;
                 // Get users in room
@@ -168,19 +168,19 @@ wss.on('connection', (connection) => {
                 break;
 
             case "offer":
-                console.log("[offer]: " + data.offerer + " -> " + data.answerer);
+                log("[offer]: " + data.offerer + " -> " + data.answerer);
                 // Relay offer to answerer
                 sendTo(users[data.answerer], data);
                 break;
 
             case "answer":
-                console.log("[answer]: " + data.offerer + " <- " + data.answerer);
+                log("[answer]: " + data.offerer + " <- " + data.answerer);
                 // Relay answer to offerer
                 sendTo(users[data.offerer], data);
                 break;
 
             case "candidate":
-                console.log("[candidate]: " + data.name);
+                log("[candidate]: " + data.name);
                 // Get users in room
                 var userList = rooms[users[data.name].roomId].users;
                 // Relay candidate to all users except self
@@ -192,7 +192,7 @@ wss.on('connection', (connection) => {
                 break;
 
             default:
-                console.log("[error]: " + message);
+                log("[error]: " + message);
                 sendTo(connection, {
                     type: "error",
                     message: "Command not found: " + data.type
@@ -203,7 +203,7 @@ wss.on('connection', (connection) => {
     // Unregister user when connection closes
     connection.on('close', () => {
         if (connection.name) {
-            console.log("User disconnected: " + connection.name);
+            log("User disconnected: " + connection.name);
 
             if (connection.roomId) {
                 leaveRoom(connection.name);
@@ -313,4 +313,8 @@ function relayOffer(offer, roomId, sender) {
 
 function sendTo(connection, message) {
     connection.send(JSON.stringify(message));
+}
+
+function log(data) {
+    console.log(`[${(process.uptime()).toFixed(2)}]\t ${data}`);
 }
