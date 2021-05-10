@@ -18,28 +18,29 @@ var far = { threshold: 400, volume: 0 };
 
 // UI elements
 
+var loginView = document.getElementById("loginView");
+var loginCard = document.getElementById("loginCard");
+var roomSelectCard = document.getElementById("roomSelectCard");
+var roomView = document.getElementById("roomView");
+
 var loginInput = document.getElementById("loginInput");
 var loginBtn = document.getElementById("loginBtn");
-var logoutBtn = document.getElementById("logoutBtn");
 
-var joinRoomInput = document.getElementById("joinRoomInput");
+var roomInput = document.getElementById("roomInput");
 var joinRoomBtn = document.getElementById("joinRoomBtn");
-var leaveRoomBtn = document.getElementById("leaveRoomBtn");
-
-var createRoomInput = document.getElementById("createRoomInput");
 var createRoomBtn = document.getElementById("createRoomBtn");
+var leaveRoomBtn = document.getElementById("leaveRoomBtn");
 
 var msgInput = document.getElementById("msgInput");
 var sendBtn = document.getElementById("sendBtn");
 
 var chatTxt = document.getElementById("chatTxt");
 
-var roomLabel = document.getElementById("roomLabel");
-var usersLabel = document.getElementById("usersLabel");
+var roomTxt = document.getElementById("roomTxt");
+var usersTxt = document.getElementById("usersTxt");
 
 var audioContainer = document.getElementById("audioContainer");
 
-updateUI("loggedout");
 
 // WebSocket initiation
 
@@ -63,6 +64,7 @@ webSocket.onmessage = (message) => {
 
             if (data.success) {
                 log("User logged in: " + username);
+                // Update UI
                 updateUI("loggedin");
             } else {
                 alert("Username taken");
@@ -77,9 +79,7 @@ webSocket.onmessage = (message) => {
                 // Update room variables
                 room = data.room;
                 roomId = data.roomId;
-                // Update UI elements
-                joinRoomInput.value = "";
-                updateRoomUI();
+                // Update UI
                 updateUI("inroom");
                 // Send WebRTC offers
                 sendOffers();
@@ -96,9 +96,7 @@ webSocket.onmessage = (message) => {
                 // Update room variables
                 room = data.room;
                 roomId = data.roomId;
-                // Update UI elements
-                createRoomInput.value = "";
-                updateRoomUI();
+                // Update UI
                 updateUI("inroom");
             } else {
                 alert("Room name occupied");
@@ -121,9 +119,6 @@ webSocket.onmessage = (message) => {
                     }
                 }
             }
-
-            // Update UI elements
-            updateRoomUI();
             break;
 
         case "chat": // Incoming chat
@@ -188,15 +183,10 @@ loginBtn.addEventListener("click", (event) => {
     }
 });
 
-// Logout button
-logoutBtn.addEventListener("click", (event) => {
-    // TO-DO
-});
-
 // Join room button
 joinRoomBtn.addEventListener("click", (event) => {
-    if (joinRoomInput) {
-        var roomId = joinRoomInput.value;
+    if (roomInput) {
+        var roomId = roomInput.value;
         log("Joining room: " + roomId);
         // Send join room message to proxy server
         send({
@@ -214,8 +204,8 @@ leaveRoomBtn.addEventListener("click", (event) => {
 
 // Create room button
 createRoomBtn.addEventListener("click", (event) => {
-    if (createRoomInput) {
-        var roomId = createRoomInput.value;
+    if (roomInput) {
+        var roomId = roomInput.value;
         log("Creating room: " + roomId);
         // Send create room message to proxy server
         send({
@@ -226,26 +216,27 @@ createRoomBtn.addEventListener("click", (event) => {
     }
 });
 
-// Send button
-sendBtn.addEventListener("click", (event) => {
-    if (msgInput.value) {
-        var msg = msgInput.value;
-        log("Sending chat message: " + msg);
-        // Send message to proxy server
-        send({
-            type: "chat",
-            message: msg
-        });
-        msgInput.value = "";
+// Message input
+msgInput.addEventListener("keyup", (event) => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        if (msgInput.value) {
+            var msg = msgInput.value;
+            log("Sending chat message: " + msg);
+            // Send message to proxy server
+            send({
+                type: "chat",
+                message: msg
+            });
+            msgInput.value = "";
+        }
     }
 });
 
 // Add keyup eventListeners to elements which need them ([input, button])
 [
     [loginInput, loginBtn],
-    [joinRoomInput, joinRoomBtn],
-    [createRoomInput, createRoomBtn],
-    [msgInput, sendBtn]
+    [roomInput, joinRoomBtn],
 
 ].forEach((element) => {
     element[0].addEventListener("keyup", (event) => {
@@ -348,7 +339,6 @@ function createPeerConnection(user) {
     } catch (error) {
         log("Error creating peer connection: " + error);
     }
-
 }
 
 // Creates a DOM audio element for appendage to HTML page
@@ -356,7 +346,7 @@ function createAudioElement(username, mediaStream) {
     var audioElement = document.createElement("audio");
     audioElement.id = username;
     audioElement.srcObject = mediaStream;
-    audioElement.setAttribute("controls", true);
+    //audioElement.setAttribute("controls", true);
     audioElement.setAttribute("autoplay", true)
 
     return audioElement;
@@ -372,58 +362,27 @@ function setDisabled(elements, disabled) {
 // Updates client UI based on given state
 function updateUI(state) {
     switch (state) {
-        case "loggedout":
-            setDisabled([
-                msgInput, sendBtn, chatTxt, logoutBtn,
-                joinRoomInput, joinRoomBtn, leaveRoomBtn,
-                createRoomInput, createRoomBtn
-            ], true);
-
-            setDisabled([loginInput, loginBtn], false);
-            break;
         case "loggedin":
-            setDisabled([loginInput, loginBtn], true);
-
-            setDisabled([
-                joinRoomInput, joinRoomBtn,
-                createRoomInput, createRoomBtn
-            ], false);
-
+            loginCard.style.display = "none";
+            roomView.style.display = "none";
+            loginView.style.display = "flex";
+            roomSelectCard.style.display = "flex";
             audioContainer.innerHTML = "";
-            updateRoomUI();
             break;
         case "inroom":
-            setDisabled([
-                msgInput, sendBtn, chatTxt,
-                leaveRoomBtn
-            ], false);
+            roomInput.value = "";
+            roomTxt.innerHTML = roomId;
 
-            setDisabled([
-                createRoomInput, createRoomBtn,
-                joinRoomInput, joinRoomBtn
-            ], true);
+            for (i = 0; i < room.users.length; i++) {
+                usersTxt.innerHTML += room.users[i];
+                if (!(i == room.users.length - 1)) { // No comma on last
+                    usersTxt.innerHTML += ", ";
+                }
+            }
 
-            updateRoomUI();
+            loginView.style.display = "none";
+            roomView.style.display = "flex";
             break;
-    }
-}
-
-// Updates room-relevant UI
-function updateRoomUI() {
-    if (roomId) {
-        roomLabel.textContent = roomId;
-        var usersString = "";
-        // Get users in room
-        var userList = room.users;
-
-        userList.forEach((user) => {
-            usersString += user + ", ";
-        });
-
-        usersLabel.textContent = usersString;
-    } else {
-        roomLabel.textContent = "";
-        usersLabel.textContent = "";
     }
 }
 
@@ -512,7 +471,7 @@ function leaveRoom() {
     });
     // Clear peer connections list
     peerConnections = [];
-
+    // Update UI
     updateUI("loggedin");
 }
 

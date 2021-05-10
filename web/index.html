@@ -7,54 +7,64 @@
 </head>
 
 <body>
-    <div>
-        <input type="text" id="loginInput" />
-        <button id="loginBtn">Login</button>
-        <button id="logoutBtn">Logout</button>
+    <!-- Non-visual container for audio elements -->
+    <div id="audioContainer"></div>
+
+    <!-- LOGIN / SELECT ROOM -->
+    <div id="loginView" class="center">
+        <div id="loginContainer">
+            <div>
+                <p id="titleHeading" class="unselectable">CoffeeBreak</p>
+                <hr class="titleHeading">
+            </div>
+            <!-- Visible by default, hidden by JS -->
+            <div id="loginCard" class="center">
+                <div class="inner">
+                    <input type="text" id="loginInput" placeholder="Username"> <br>
+                    <button id="loginBtn">LOGIN</button>
+                </div>
+            </div>
+            <!-- Hidden by default, made visible by JS -->
+            <div id="roomSelectCard" class="center">
+                <div class="inner">
+                    <input type="text" id="roomInput" placeholder="Room"> <br>
+                    <button id="joinRoomBtn">JOIN</button>
+                    <button id="createRoomBtn">CREATE</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <br>
+    <!-- ROOM -->
+    <div id="roomView" class="center">
+        <div id="roomContainer">
+            <div id="roomTop">
+                <div id="labelsContainer">
+                    <p id="roomHeader">Room:</p>
+                    <span id="roomTxt"></span>
+                    <br>
+                    <p id="usersHeader">Users:</p>
+                    <span id="usersTxt"></span>
+                </div>
+                <div id="buttonsContainer">
+                    <button id="leaveRoomBtn">LEAVE</button>
+                    <button id="toggleDrawHearingRangeBtn">TOGGLE INDICATOR</button>
+                </div>
+            </div>
 
-    <div>
-        <input type="text" id="joinRoomInput" />
-        <button id="joinRoomBtn">Join room</button>
-        <button id="leaveRoomBtn">Leave room</button>
+            <div id="canvasContainer">
+                <canvas id="roomCanvas" height="400" width="800"></canvas>
+                <div id="chatContainer">
+                    <div id="chatTxtContainer">
+                        <textarea id="chatTxt" readonly></textarea>
+                    </div>
+                    <div id="msgInputContainer">
+                        <input type="text" id="msgInput" placeholder="Message">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <br>
-
-    <div>
-        <input type="text" id="createRoomInput" />
-        <button id="createRoomBtn">Create room</button>
-    </div>
-
-    <br>
-
-    <div id="audioContainer">
-        <!-- JS-generated audio elements get appended here -->
-    </div>
-
-    <br>
-
-    <div>
-        <label>Room: </label>
-        <label id="roomLabel"></label>
-        <br>
-        <label>Users: </label>
-        <label id="usersLabel"></label>
-    </div>
-
-    <br>
-
-    <input type="text" id="msgInput" />
-    <button style="margin-bottom: 5px" id="sendBtn">Send message</button>
-
-    <div display="flex">
-        <canvas height="300" width="600" style="border: grey 3px solid;"></canvas>
-        <textarea id="chatTxt" readonly style="height: 300px; width: 200px;"></textarea>
-    </div>
-
-    <button id="toggleDrawHearingRangeBtn">Toggle hearing indicator</button>
 
     <script src="client.js"></script>
     <script src="canvas.js"></script>
