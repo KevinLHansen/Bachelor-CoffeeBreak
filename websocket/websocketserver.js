@@ -230,6 +230,10 @@ function createAvatar(data) {
     var y = Math.floor(Math.random() * (canvasHeight - vertMargin * 2) + vertMargin);
     // Get random hex color
     var color = Math.floor(Math.random() * 16777215).toString(16);
+    // Sometimes results in strings that are one digit too short (5 instead of 6)
+    if (color.length == 5) {
+        color = "0" + color;
+    }
 
     rooms[data.roomId].avatars.push({ name: data.name, x: x, y: y, width: size, height: size, fill: `#${color}`, isDragging: false });
 

@@ -98,6 +98,7 @@ webSocket.onmessage = (message) => {
                 roomId = data.roomId;
                 // Update UI
                 updateUI("inroom");
+                updateUsersUI();
             } else {
                 alert("Room name occupied");
             }
@@ -107,6 +108,10 @@ webSocket.onmessage = (message) => {
             log("[roomUpdate]: " + message.data);
 
             room = data.room; // Update room state
+
+            // Update UI
+            updateUI("inroom");
+            updateUsersUI();
 
             // Remove audio element of leaver
             if (data.leaver) {
@@ -125,7 +130,8 @@ webSocket.onmessage = (message) => {
             log("[chat]: " + message.data);
 
             // Insert message in chatbox
-            chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value;
+            //chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value; // Most recent on top
+            chatTxt.value = chatTxt.value + data.name + ": " + data.message + "\n"; // Most recent on bottom
             break;
 
         case "canvasUpdate":
@@ -185,7 +191,7 @@ loginBtn.addEventListener("click", (event) => {
 
 // Join room button
 joinRoomBtn.addEventListener("click", (event) => {
-    if (roomInput) {
+    if (roomInput.value) {
         var roomId = roomInput.value;
         log("Joining room: " + roomId);
         // Send join room message to proxy server
@@ -204,7 +210,7 @@ leaveRoomBtn.addEventListener("click", (event) => {
 
 // Create room button
 createRoomBtn.addEventListener("click", (event) => {
-    if (roomInput) {
+    if (roomInput.value) {
         var roomId = roomInput.value;
         log("Creating room: " + roomId);
         // Send create room message to proxy server
@@ -368,22 +374,27 @@ function updateUI(state) {
             loginView.style.display = "flex";
             roomSelectCard.style.display = "flex";
             audioContainer.innerHTML = "";
+            chatTxt.value = "";
             break;
         case "inroom":
             roomInput.value = "";
             roomTxt.innerHTML = roomId;
-
-            for (i = 0; i < room.users.length; i++) {
-                usersTxt.innerHTML += room.users[i];
-                if (!(i == room.users.length - 1)) { // No comma on last
-                    usersTxt.innerHTML += ", ";
-                }
-            }
-
             loginView.style.display = "none";
             roomView.style.display = "flex";
             break;
     }
+}
+
+// Updates UI element which lists users in current room
+function updateUsersUI() {
+    var newText = "";
+    for (i = 0; i < room.users.length; i++) {
+        newText += room.users[i];
+        if (!(i == room.users.length - 1)) { // No comma on last
+            newText += ", ";
+        }
+    }
+    usersTxt.innerHTML = newText;
 }
 
 // Updates volumes of all audio elements according to avatar distance
