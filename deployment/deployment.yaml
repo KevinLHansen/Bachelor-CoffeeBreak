@@ -8,7 +8,7 @@ metadata:
     nginx.ingress.kubernetes.io/default-backend: coffeebreak-web-service:8888
 spec:
   rules:
-    - host: coffeebreak.sempro0.uvm.sdu.dk
+    - host: group2.sempro0.uvm.sdu.dk
       http:
         paths:
           - backend:
