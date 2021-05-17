@@ -8,6 +8,7 @@ RUN npm install
 
 COPY . /work/
 
-EXPOSE 8080
+EXPOSE 443
+
 
 CMD npm run start

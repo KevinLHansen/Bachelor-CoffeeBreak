@@ -6,7 +6,7 @@ const path = require('path');
 const requestIp = require('request-ip');
 
 const https_port = 443;
-const http_port = 80;
+const http_port = 8072;
 
 var httpServer = express();
 var server = express();
@@ -36,7 +36,7 @@ server.get('/', (req, res) => {
 });
 
 http.createServer(httpServer).listen(http_port, function() {
-    console.log(`HTTP redirect server live at https://localhost:${http_port}`);
+    console.log(`HTTP redirect server live at http://localhost:${http_port}`);
 });
 
 https.createServer(conf, server).listen(https_port, () => {
