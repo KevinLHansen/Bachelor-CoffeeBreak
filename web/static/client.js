@@ -1,6 +1,6 @@
 const serverIP = "localhost"; // for local testing
 //const serverIP = "212.130.120.89"; // for public testing
-const serverPort = "8074";
+const serverPort = "8082";
 
 // Variables
 
