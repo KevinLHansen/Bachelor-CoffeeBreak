@@ -1,4 +1,4 @@
-const https = require('https');
+//const https = require('https');
 const http = require('http');
 const express = require('express');
 const fs = require('fs');
@@ -24,21 +24,21 @@ server.use(express.static('static'));
 
 
 // Setup redirect server
-httpServer.get("/", function(req, res, next) {
-    res.redirect("https://" + req.headers.host);
-});
+// httpServer.get("/", function(req, res, next) {
+//     res.redirect("https://" + req.headers.host);
+// });
 
 // HTTPS
-server.get('/', (req, res) => {
+httpServer.get('/', (req, res) => {
     const ip = req.clientIp
     res.sendFile(path.join(__dirname + "/index.html"));
     console.log("User from " + ip + " requested root");
 });
 
 http.createServer(httpServer).listen(http_port, function() {
-    console.log(`HTTP redirect server live at https://localhost:${http_port}`);
+    console.log(`HTTP redirect server live at http://localhost:${http_port}`);
 });
 
-https.createServer(conf, server).listen(https_port, () => {
-    console.log(`Webserver live at https://localhost:${https_port}`);
-});
+// https.createServer(conf, server).listen(https_port, () => {
+//     console.log(`Webserver live at https://localhost:${https_port}`);
+// });
