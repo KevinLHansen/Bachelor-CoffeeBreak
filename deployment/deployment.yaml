@@ -19,6 +19,14 @@ spec:
             pathType: Prefix
             path: /
 
+          - backend:
+              service: coffeebreak-web-service
+              port:
+                number: 8074
+              pathType: Prefix
+              path: /t
+              
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,7 +46,7 @@ spec:
     spec:
       containers:
       - name: coffeebreak-proxy
-        image: benjaminhck/coffeebreak-proxy:latest
+        image: benjaminhck/coffeebreak-socket:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8074
@@ -74,7 +82,6 @@ spec:
   containers:
     - name: coffeebreak-web-pod
       image: benjaminhck/coffeebreak-web:latest
-      imagePullPolicy: Always
       ports:
         - containerPort: 80
       # readinessProbe:

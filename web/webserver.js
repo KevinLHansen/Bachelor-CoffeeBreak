@@ -1,4 +1,4 @@
-//const https = require('https');
+const https = require('https');
 const http = require('http');
 const express = require('express');
 const fs = require('fs');
@@ -9,9 +9,9 @@ const https_port = 443;
 const http_port = 80;
 
 var httpServer = express();
-var server = express();
+//var server = express();
 
-server.use(requestIp.mw())
+httpServer.use(requestIp.mw())
 
 // Certificate config
 const conf = {
@@ -20,7 +20,7 @@ const conf = {
 };
 
 // Static resources
-server.use(express.static('static'));
+httpServer.use(express.static('static'));
 
 
 // Setup redirect server

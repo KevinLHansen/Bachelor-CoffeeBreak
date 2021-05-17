@@ -2,7 +2,7 @@ const fs = require('fs');
 const WebSocketServer = require('ws').Server;
 const HttpsServer = require('https').createServer;
 
-const port = 8074;
+const port = 8082;
 
 const conf = {
     key: fs.readFileSync('cert/key.pem'),
