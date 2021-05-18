@@ -2,10 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: coffeebreak-ingress
+  name: cb-lobby-ingress
   namespace: group2
   annotations:
-    nginx.ingress.kubernetes.io/default-backend: coffeebreak-web-service:8888
+    nginx.ingress.kubernetes.io/default-backend: cb-lobby:8888
 spec:
   rules:
     - host: group2.sempro0.uvm.sdu.dk
@@ -38,10 +38,10 @@ spec:
     spec:
       containers:
       - name: cb-room
-        image: benjaminhck/coffeebreak-socket:latest
+        image: benjaminhck/coffeebreak-web:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8074
+        - containerPort: 80
         # livenessProbe:
         #   httpGet:
         #     path: /status
@@ -62,7 +62,7 @@ spec:
      -  protocol: TCP
         name: https
         port: 8074
-        targetPort: 8074
+        targetPort: 80
 
 ---
 apiVersion: v1

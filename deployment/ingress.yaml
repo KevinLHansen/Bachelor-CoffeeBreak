@@ -1,0 +1,22 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cb-room-ingress
+  namespace: group2
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+    - host: group2.sempro0.uvm.sdu.dk
+      http:
+        paths:
+          - backend:
+              service:
+                name: cb-room-svc
+                port:
+                  number: 8074
+            pathType: Prefix
+            path: /test
+
+---
