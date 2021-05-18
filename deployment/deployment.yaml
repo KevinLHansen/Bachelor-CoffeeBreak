@@ -13,7 +13,7 @@ spec:
         paths:
           - backend:
               service:
-                name: coffeebreak-web-service
+                name: cb-lobby-svc
                 port:
                   number: 8888
             pathType: Prefix
@@ -23,21 +23,21 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: coffeebreak-proxy-deployment
+  name: cb-room-dep
   labels:
-    app: coffeebreak-proxy
+    app: cb-room
 spec:
   selector:
       matchLabels:
-        app: coffeebreak-proxy
+        app: cb-room
   replicas: 1
   template:
     metadata:
       labels:
-        app: coffeebreak-proxy
+        app: cb-room
     spec:
       containers:
-      - name: coffeebreak-proxy
+      - name: cb-room
         image: benjaminhck/coffeebreak-socket:latest
         imagePullPolicy: Always
         ports:
@@ -53,11 +53,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: coffeebreak-proxy-service
+  name: cb-room-svc
 spec:
   type: LoadBalancer
   selector:
-    app: coffeebreak-proxy
+    app: cb-room
   ports:
      -  protocol: TCP
         name: https
@@ -68,13 +68,13 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: coffeebreak-web-pod
+  name: cb-lobby
   labels:
-    app: coffeebreak-web-pod
+    app: cb-lobby
 spec:
   serviceAccountName: group2-user
   containers:
-    - name: coffeebreak-web-pod
+    - name: cb-lobby
       image: benjaminhck/coffeebreak-web:latest
       ports:
         - containerPort: 80
@@ -95,11 +95,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: coffeebreak-web-service
+  name: cb-lobby-svc
 spec:
   type: LoadBalancer
   selector:
-    app: coffeebreak-web-pod
+    app: cb-lobby
   ports:
      -  protocol: TCP
         name: http
