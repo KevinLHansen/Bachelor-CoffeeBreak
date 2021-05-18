@@ -1,5 +1,5 @@
 ---
-apiVersion: networking.k8s.io/v1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: cb-room-ingress
@@ -12,11 +12,9 @@ spec:
       http:
         paths:
           - backend:
-              service:
-                name: cb-room-svc
-                port:
-                  number: 8074
+              serviceName: cb-room-svc
+              servicePort: 80
             pathType: Prefix
-            path: /test
+            path: /test123
 
 ---
