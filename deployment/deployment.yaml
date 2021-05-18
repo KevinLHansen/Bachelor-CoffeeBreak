@@ -19,14 +19,6 @@ spec:
             pathType: Prefix
             path: /
 
-          - backend:
-              service: coffeebreak-web-service
-              port:
-                number: 8074
-              pathType: Prefix
-              path: /t
-              
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -56,6 +48,7 @@ spec:
         #     port: 5000
         #   initialDelaySeconds: 3
         #   periodSeconds: 3
+
 ---
 apiVersion: v1
 kind: Service
@@ -79,6 +72,7 @@ metadata:
   labels:
     app: coffeebreak-web-pod
 spec:
+  serviceAccountName: group2-user
   containers:
     - name: coffeebreak-web-pod
       image: benjaminhck/coffeebreak-web:latest
@@ -96,6 +90,7 @@ spec:
       #     port: 8443
       #   initialDelaySeconds: 15
       #   periodSeconds: 20
+      
 ---
 apiVersion: v1
 kind: Service
