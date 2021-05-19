@@ -1,4 +1,4 @@
-const server_ip = "localhost";
+const server_ip = window.location.host;
 const server_port = "8082";
 
 // Variables
@@ -10,8 +10,8 @@ var input = document.getElementById("input");
 
 // WebSocket initiation
 
-var url = `${server_ip}:${server_port}`;
-log(`Client connection to WebSocket: ${url}`);
+var url = `${server_ip}/ws`;
+log(`Client connecting to WebSocket: ${url}`);
 webSocket = new WebSocket(`ws://${url}`);
 
 webSocket.onopen = () => {

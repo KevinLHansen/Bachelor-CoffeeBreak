@@ -8,6 +8,9 @@ RUN npm install
 
 COPY . /work/
 
+# WebServer port
 EXPOSE 80
+# SocketServer port
+EXPOSE 8082
 
 CMD node server

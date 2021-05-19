@@ -16,8 +16,8 @@ const kubeConf = new k8s.KubeConfig();
 const ingressName = "ing-coffeebreak";
 const namespace = "group2";
 
-// kubeConf.loadFromCluster(); // in-cluster
-kubeConf.loadFromDefault(); // locally
+kubeConf.loadFromCluster(); // in-cluster
+//kubeConf.loadFromDefault(); // locally
 
 const k8sCoreApi = kubeConf.makeApiClient(k8s.CoreV1Api);
 const k8sAppsApi = kubeConf.makeApiClient(k8s.AppsV1Api);
@@ -73,6 +73,10 @@ wsServer.on('connection', (connection) => {
 
             case "joinRoom":
                 break;
+
+            default:
+                connection.send("Unknown command");
+                break;
         }
     });
 
@@ -106,9 +110,11 @@ async function createRoomPod(roomName) {
             containers: [{
                 name: "con-" + roomName,
                 image: "benjaminhck/coffeebreak-room:latest",
-                ports: [
-                    { containerPort: 80 }
-                ]
+                ports: [{
+                    containerPort: 80,
+                }, {
+                    containerPort: 8082
+                }]
             }]
         }
     }).then((res) => {
@@ -124,11 +130,23 @@ async function createRoomService(roomName) {
     k8sCoreApi.createNamespacedService(namespace, {
         apiVersion: 'v1',
         kind: 'Service',
-        metadata: { name: 'svc-' + roomName },
+        metadata: {
+            name: 'svc-' + roomName
+        },
         spec: {
             type: 'LoadBalancer',
-            selector: { app: 'room-' + roomName },
-            ports: [{ name: 'http', port: 8075, targetPort: 80 }]
+            selector: {
+                app: 'room-' + roomName
+            },
+            ports: [{
+                name: 'room',
+                port: 8075,
+                targetPort: 80
+            }, {
+                name: 'socket',
+                port: 8082,
+                targetPort: 8082
+            }]
         }
     }).then((res) => {
         logs("Created Service: svc-" + roomName)
@@ -140,12 +158,15 @@ async function createRoomService(roomName) {
 
 async function addIngressPath(roomName) {
     logs("patchIngress:");
-    // Build the patch
+    // Build the patches
     const patch = [];
+    // Path for WebServer
     patch.push({
         "op": "add",
         "path": "/spec/rules/0/http/paths/-",
         "value": {
+            "path": "/" + roomName + "(/|$)(.*)",
+            "pathType": "Exact",
             "backend": {
                 "service": {
                     "name": "svc-" + roomName,
@@ -153,9 +174,24 @@ async function addIngressPath(roomName) {
                         "number": 8075
                     }
                 }
-            },
+            }
+        }
+    });
+    // Path for WebSocket server
+    patch.push({
+        "op": "add",
+        "path": "/spec/rules/0/http/paths/-",
+        "value": {
+            "path": "/" + roomName + "/ws" + "(/|$)(.*)",
             "pathType": "Exact",
-            "path": "/" + roomName + "(/|$)(.*)"
+            "backend": {
+                "service": {
+                    "name": "svc-" + roomName,
+                    "port": {
+                        "number": 8082
+                    }
+                }
+            }
         }
     });
 
@@ -166,7 +202,7 @@ async function addIngressPath(roomName) {
     };
 
     k8sNetworkApi.patchNamespacedIngress(ingressName, namespace, patch, undefined, undefined, undefined, undefined, options).then((res) => {
-        logs("Added Ingress path: /" + roomName);
+        logs("Added Ingress paths for room " + roomName);
         console.log("statusCode: " + res.response.statusCode);
     }).catch((err) => {
         console.log(err);

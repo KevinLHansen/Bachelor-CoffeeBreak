@@ -5,16 +5,15 @@ metadata:
   name: cb-room-ingress
   namespace: group2
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.org/websocket-services: "svc-lobby-socket"
 spec:
   rules:
     - host: group2.sempro0.uvm.sdu.dk
       http:
         paths:
           - backend:
-              serviceName: cb-room-svc
-              servicePort: 80
-            pathType: Prefix
-            path: /test123
+              serviceName: svc-lobby-socket
+              servicePort: 8082
+            path: /ws
 
 ---

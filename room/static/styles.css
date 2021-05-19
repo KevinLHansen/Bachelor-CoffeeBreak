@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+body {
+    margin: 0;
+    font-family: 'Varela Round', sans-serif;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: none;
+}
+
+input {
+    padding: 5px;
+    border: none;
+    border-radius: 5px;
+}
+
+button {
+    font-weight: bold;
+    border: solid #54a4da 1px;
+    border-radius: 0;
+    background: #a3daff;
+    min-height: 30px;
+    color: white;
+    transition: background 0.1s;
+}
+
+button:hover {
+    cursor: pointer;
+    background: #73c7ff;
+}
+
+button:active {
+    background: #bbe4ff;
+}
+
+.debug {
+    border: solid rgba(255, 0, 0, 0.5) 1px;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.centerh {
+    margin: auto;
+}
+
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#loginView {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #82CDFF;
+}
+
+#loginView input {
+    box-sizing: border-box;
+    margin: 30px 0 20px;
+    width: 100%;
+    height: 22pt;
+    font-size: 16pt;
+}
+
+#loginView button {
+    margin: 0 0 10px;
+    width: 100%;
+    height: 24pt;
+    font-size: 14pt;
+}
+
+#loginContainer {
+    text-align: center;
+    width: 700px;
+    height: 300px;
+}
+
+.inner {
+    width: 400px;
+}
+
+#titleHeading {
+    margin: -15px -3px -5px;
+    padding: 0;
+    font-size: 90pt;
+    color: white;
+}
+
+hr.titleHeading {
+    margin: 0;
+    padding: 0;
+    border: solid white 2px;
+}
+
+#innerLogin {
+    width: 400px;
+}
+
+#roomSelectCard {
+    display: none;
+}
+
+#roomView {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+#roomContainer {
+    padding: 30px 50px;
+    width: 1000px;
+    background: #82CDFF;
+}
+
+#roomTop {
+    display: flex;
+    margin: 0 0 5px;
+}
+
+#labelsContainer {
+    width: 100%;
+}
+
+#buttonsContainer {
+    text-align: right;
+    float: right;
+}
+
+#buttonsContainer button {
+    width: 100px;
+    margin: 0 0 5px;
+}
+
+#roomHeader {
+    display: inline-block;
+    margin: 0 0 10px;
+    font-size: 18pt;
+    color: white;
+}
+
+#roomTxt {
+    margin: 0 0 0 5px;
+    font-size: 18pt;
+    color: white;
+}
+
+#usersHeader {
+    display: inline-block;
+    margin: 0;
+    font-size: 14pt;
+    color: white;
+}
+
+#usersTxt {
+    margin: 0 0 0 5px;
+    font-size: 14pt;
+    color: white;
+}
+
+#canvasContainer {
+    display: flex;
+}
+
+#roomCanvas {
+    float: left;
+    background: #ecf7ff;
+}
+
+#chatContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#chatTxt {
+    box-sizing: border-box;
+    padding: 10px;
+    width: 100%;
+    height: 100%;
+    border: none;
+    resize: none;
+}
+
+#msgInput {
+    box-sizing: border-box;
+    border-radius: 0;
+    width: 100%;
+    height: 100%;
+    background: #d3ecff;
+}
+
+#chatTxtContainer {
+    width: 100%;
+    flex-grow: 1;
+}
+
+#msgInputContainer {
+    width: 100%;
+}
