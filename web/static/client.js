@@ -7,13 +7,6 @@ var webSocket;
 // UI elements
 var button = document.getElementById("button");
 var input = document.getElementById("input");
-var buttonDelete = document.getElementById("buttonDelete");
-var inputDelete = document.getElementById("inputDelete");
-var buttonIngress = document.getElementById("testIngress")
-var inputIngress = document.getElementById("inputIngress")
-var buttonFull = document.getElementById("testFull")
-var inputFull = document.getElementById("inputFull")
-
 
 // WebSocket initiation
 
@@ -25,6 +18,8 @@ webSocket.onopen = () => {
     log("Client connected to WebSocket");
 };
 
+// UI handling
+
 button.addEventListener("click", (event) => {
     if (input.value) {
         send({
@@ -34,33 +29,6 @@ button.addEventListener("click", (event) => {
     }
 });
 
-buttonDelete.addEventListener("click", (event) => {
-    if (inputDelete.value) {
-        send({
-            type: "deleteRoom",
-            roomName: input.value
-        });
-    }
-});
-
-buttonIngress.addEventListener("click", (event) => {
-    if (inputIngress.value) {
-        send({
-            type: "testIngress",
-            roomName: inputIngress.value
-        });
-    }
-});
-
-
-buttonFull.addEventListener("click", (event) => {
-    if (inputFull.value) {
-        send({
-            type: "testFull",
-            roomName: inputFull.value
-        });
-    }
-});
 
 // Sends data to WebSocket
 function send(message) {

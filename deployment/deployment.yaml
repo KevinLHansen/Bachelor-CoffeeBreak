@@ -2,10 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: cb-lobby-ingress
+  name: ing-coffeebreak
   namespace: group2
   annotations:
-    nginx.ingress.kubernetes.io/default-backend: cb-lobby:8888
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
     - host: group2.sempro0.uvm.sdu.dk
@@ -13,69 +13,24 @@ spec:
         paths:
           - backend:
               service:
-                name: cb-lobby-svc
+                name: svc-lobby
                 port:
                   number: 8888
             pathType: Prefix
-            path: /
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: cb-room-dep
-  labels:
-    app: cb-room
-spec:
-  selector:
-      matchLabels:
-        app: cb-room
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: cb-room
-    spec:
-      containers:
-      - name: cb-room
-        image: benjaminhck/coffeebreak-web:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-        # livenessProbe:
-        #   httpGet:
-        #     path: /status
-        #     port: 5000
-        #   initialDelaySeconds: 3
-        #   periodSeconds: 3
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: cb-room-svc
-spec:
-  type: LoadBalancer
-  selector:
-    app: cb-room
-  ports:
-     -  protocol: TCP
-        name: https
-        port: 8074
-        targetPort: 80
+            path: /()(.*)
 
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: cb-lobby
+  name: lobby
   labels:
-    app: cb-lobby
+    app: lobby
 spec:
   serviceAccountName: group2-user
   containers:
-    - name: cb-lobby
-      image: benjaminhck/coffeebreak-web:latest
+    - name: con-lobby
+      image: benjaminhck/coffeebreak-lobby:latest
       ports:
         - containerPort: 80
       # readinessProbe:
@@ -95,11 +50,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: cb-lobby-svc
+  name: svc-lobby
 spec:
   type: LoadBalancer
   selector:
-    app: cb-lobby
+    app: lobby
   ports:
      -  protocol: TCP
         name: http

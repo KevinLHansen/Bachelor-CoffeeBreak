@@ -13,12 +13,15 @@ const k8s = require('@kubernetes/client-node');
 const { PortForward, V1Pod } = require('@kubernetes/client-node');
 const kubeConf = new k8s.KubeConfig();
 
+const ingressName = "ing-coffeebreak";
+const namespace = "group2";
+
 // kubeConf.loadFromCluster(); // in-cluster
 kubeConf.loadFromDefault(); // locally
 
 const k8sCoreApi = kubeConf.makeApiClient(k8s.CoreV1Api);
 const k8sAppsApi = kubeConf.makeApiClient(k8s.AppsV1Api);
-const k8sNetworkApi = kubeConf.makeApiClient(k8s.NetworkingV1beta1Api)
+const k8sNetworkApi = kubeConf.makeApiClient(k8s.NetworkingV1Api)
 
 var httpServer = express();
 httpServer.use(requestIp.mw());
@@ -58,7 +61,9 @@ wsServer.on('connection', (connection) => {
         switch (data.type) {
             case "createRoom":
                 logs("createRoom");
-                onCreateRoom(data);
+                createRoomPod(data.roomName);
+                createRoomService(data.roomName);
+                addIngressPath(data.roomName);
                 break;
 
             case "deleteRoom":
@@ -68,14 +73,6 @@ wsServer.on('connection', (connection) => {
 
             case "joinRoom":
                 break;
-
-            case "testIngress":
-                logs("generateIngressPath")
-                createService(data)
-
-            case "testFull":
-                logs("testFull")
-                testFull(data)
         }
     });
 
@@ -87,93 +84,117 @@ wsServer.on('connection', (connection) => {
 // KUBERNETES
 
 async function onDeleteRoom(data) {
-    k8sCoreApi.deleteNamespacedPod(data.roomName, "group2").then((res) => {
+    k8sCoreApi.deleteNamespacedPod(data.roomName, namespace).then((res) => {
         console.log(res.body);
     }).catch((err) => {
         console.log(err);
     });
 }
 
-async function onCreateRoom(data) {
-
-    k8sCoreApi.createNamespacedPod("group2", {
+async function createRoomPod(roomName) {
+    k8sCoreApi.createNamespacedPod(namespace, {
         apiVersion: "v1",
         kind: "Pod",
         metadata: {
-            name: data.roomName,
+            name: "room-" + roomName,
             labels: {
-                app: data.roomName
+                app: "room-" + roomName
             }
         },
         spec: {
             serviceAccountName: "group2-user",
             containers: [{
-                name: "coffeebreak-room-pod",
-                image: "benjaminhck/coffeebreak-web:latest",
+                name: "con-" + roomName,
+                image: "benjaminhck/coffeebreak-room:latest",
                 ports: [
                     { containerPort: 80 }
                 ]
             }]
         }
     }).then((res) => {
-        console.log(res.body);
+        logs("Created Pod: room-" + roomName);
+        console.log("statusCode: " + res.response.statusCode);
     }).catch((err) => {
         console.log(err);
     });
 }
 
-    async function generateIngressPath(data) {
-        console.log(data.ingressName)
-        k8sNetworkApi.createNamespacedIngress('group2', {
-            apiVersions: 'networking.k8s.io/v1beta1',
-            kind: 'Ingress',
-            metadata: { name: `room-`+ data.roomName },
-            spec: {
-              rules: [{
-                host: `group2.sempro0.uvm.sdu.dk`,
-                http: {
-                  paths: [{
-                    backend: {
-                      serviceName: data.roomName + `-svc`,
-                      servicePort: 80
-                    },
-                    path: '/' + data.roomName
-                  }]
+async function createRoomService(roomName) {
+    logs("createService:");
+    k8sCoreApi.createNamespacedService(namespace, {
+        apiVersion: 'v1',
+        kind: 'Service',
+        metadata: { name: 'svc-' + roomName },
+        spec: {
+            type: 'LoadBalancer',
+            selector: { app: 'room-' + roomName },
+            ports: [{ name: 'http', port: 8075, targetPort: 80 }]
+        }
+    }).then((res) => {
+        logs("Created Service: svc-" + roomName)
+        console.log("statusCode: " + res.response.statusCode);
+    }).catch((err) => {
+        console.log(err);
+    });
+}
+
+async function addIngressPath(roomName) {
+    logs("patchIngress:");
+    // Build the patch
+    const patch = [];
+    patch.push({
+        "op": "add",
+        "path": "/spec/rules/0/http/paths/-",
+        "value": {
+            "backend": {
+                "service": {
+                    "name": "svc-" + roomName,
+                    "port": {
+                        "number": 8075
+                    }
                 }
-              }],
-            }
-          }).catch(e => console.log(e))
-    }
+            },
+            "pathType": "Exact",
+            "path": "/" + roomName + "(/|$)(.*)"
+        }
+    });
 
-    async function createService(data){
-        // TODO: avoid port collision?
-        k8sCoreApi.createNamespacedService('group2', {
-            apiVersion: 'v1',
-            kind: 'Service',
-            metadata: { name: `svc-`+ data.roomName},
-            spec: {
-                type: 'LoadBalancer',
-                selector: {app: `room-`+ data.roomName},
-                ports: [{name: 'http', port: 8075, targetPort: 80}]
-            }
-        })
-        .catch(e => console.log(e))
-        
-    }
+    const options = {
+        "headers": {
+            "Content-Type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH
+        }
+    };
 
-    async function testFull(data) {
+    k8sNetworkApi.patchNamespacedIngress(ingressName, namespace, patch, undefined, undefined, undefined, undefined, options).then((res) => {
+        logs("Added Ingress path: /" + roomName);
+        console.log("statusCode: " + res.response.statusCode);
+    }).catch((err) => {
+        console.log(err);
+    });
+}
 
-    }
+async function removeIngressPath(index) {
+    const patch = [];
+    patch.push({
+        "op": "remove",
+        "path": "/spec/rules/0/http/paths/" + index
+    });
 
-    // k8sAppsApi.readNamespacedDeployment("coffeebreak-proxy-deployment", "group2").then((res) => {
-    //     console.log(res.body);
-    // }).catch((err) => {
-    //     console.log(err);
-    // });
+    const options = {
+        "headers": {
+            "Content-Type": k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH
+        }
+    };
 
+    k8sNetworkApi.patchNamespacedIngress(ingressName, namespace, patch, undefined, undefined, undefined, undefined, options).then((res) => {
+        console.log("statusCode: " + res.response.statusCode);
+    }).catch((err) => {
+        console.log(err);
+    })
+}
 
 function getPods() {
-    k8sCoreApi.listNamespacedPod("group2").then((res) => {
+    k8sCoreApi.listNamespacedPod(namespace).then((res) => {
         return res;
     }).catch((err) => {
         console.log(err);
