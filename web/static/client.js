@@ -11,6 +11,8 @@ var buttonDelete = document.getElementById("buttonDelete");
 var inputDelete = document.getElementById("inputDelete");
 var buttonIngress = document.getElementById("testIngress")
 var inputIngress = document.getElementById("inputIngress")
+var buttonFull = document.getElementById("testFull")
+var inputFull = document.getElementById("inputFull")
 
 
 // WebSocket initiation
@@ -45,7 +47,17 @@ buttonIngress.addEventListener("click", (event) => {
     if (inputIngress.value) {
         send({
             type: "testIngress",
-            ingressName: inputIngress.value
+            roomName: inputIngress.value
+        });
+    }
+});
+
+
+buttonFull.addEventListener("click", (event) => {
+    if (inputFull.value) {
+        send({
+            type: "testFull",
+            roomName: inputFull.value
         });
     }
 });

@@ -71,7 +71,11 @@ wsServer.on('connection', (connection) => {
 
             case "testIngress":
                 logs("generateIngressPath")
-                generateIngressPath(data)
+                createService(data)
+
+            case "testFull":
+                logs("testFull")
+                testFull(data)
         }
     });
 
@@ -105,7 +109,7 @@ async function onCreateRoom(data) {
             serviceAccountName: "group2-user",
             containers: [{
                 name: "coffeebreak-room-pod",
-                image: "benjaminhck/coffeebreak-proxy:latest",
+                image: "benjaminhck/coffeebreak-web:latest",
                 ports: [
                     { containerPort: 80 }
                 ]
@@ -123,22 +127,42 @@ async function onCreateRoom(data) {
         k8sNetworkApi.createNamespacedIngress('group2', {
             apiVersions: 'networking.k8s.io/v1beta1',
             kind: 'Ingress',
-            metadata: { name: `room-`+ data.ingressName },
+            metadata: { name: `room-`+ data.roomName },
             spec: {
               rules: [{
                 host: `group2.sempro0.uvm.sdu.dk`,
                 http: {
                   paths: [{
                     backend: {
-                      serviceName: 'test-ingress1',
+                      serviceName: data.roomName + `-svc`,
                       servicePort: 80
                     },
-                    path: '/' + data.ingressName
+                    path: '/' + data.roomName
                   }]
                 }
               }],
             }
           }).catch(e => console.log(e))
+    }
+
+    async function createService(data){
+        // TODO: avoid port collision?
+        k8sCoreApi.createNamespacedService('group2', {
+            apiVersion: 'v1',
+            kind: 'Service',
+            metadata: { name: `svc-`+ data.roomName},
+            spec: {
+                type: 'LoadBalancer',
+                selector: {app: `room-`+ data.roomName},
+                ports: [{name: 'http', port: 8075, targetPort: 80}]
+            }
+        })
+        .catch(e => console.log(e))
+        
+    }
+
+    async function testFull(data) {
+
     }
 
     // k8sAppsApi.readNamespacedDeployment("coffeebreak-proxy-deployment", "group2").then((res) => {
