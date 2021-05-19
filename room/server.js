@@ -15,7 +15,7 @@ httpServer.use(express.static('static'));
 
 // WEB SERVER
 
-http.createServer(httpServer).listen(http_port, function() {
+http.createServer(httpServer).listen(http_port, () => {
     logw(`HTTP server live at http://localhost:${http_port}`);
 });
 

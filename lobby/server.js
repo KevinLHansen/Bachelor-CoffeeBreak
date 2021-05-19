@@ -23,11 +23,12 @@ const k8sCoreApi = kubeConf.makeApiClient(k8s.CoreV1Api);
 const k8sAppsApi = kubeConf.makeApiClient(k8s.AppsV1Api);
 const k8sNetworkApi = kubeConf.makeApiClient(k8s.NetworkingV1Api)
 
+
+// WEB SERVER
+
 var httpServer = express();
 httpServer.use(requestIp.mw());
 httpServer.use(express.static('static'));
-
-// WEB SERVER
 
 http.createServer(httpServer).listen(http_port, function() {
     logw(`HTTP server live at http://localhost:${http_port}`);

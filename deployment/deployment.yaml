@@ -6,8 +6,7 @@ metadata:
   namespace: group2
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.org/websocket-services: "svc-lobby"
-    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true" # ALWAYS REDIRECTS TO HTTPS
 
 spec:
   rules:

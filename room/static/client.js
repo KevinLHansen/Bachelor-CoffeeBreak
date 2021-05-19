@@ -11,9 +11,9 @@ var input = document.getElementById("input");
 
 // WebSocket initiation
 
-var url = `${server_ip}${room_path}/ws`;
+var url = `${server_ip}${room_path}ws`;
 log(`Client connecting to WebSocket: ${url}`);
-webSocket = new WebSocket(`ws://${url}`);
+webSocket = new WebSocket(`wss://${url}`);
 
 webSocket.onopen = () => {
     log("Client connected to WebSocket");

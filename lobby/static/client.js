@@ -12,7 +12,7 @@ var input = document.getElementById("input");
 
 var url = `${server_ip}/ws`;
 log(`Client connecting to WebSocket: ${url}`);
-webSocket = new WebSocket(`ws://${url}`);
+webSocket = new WebSocket(`wss://${url}`);
 
 webSocket.onopen = () => {
     log("Client connected to WebSocket");
