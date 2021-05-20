@@ -298,7 +298,7 @@ function sendAnswer(offerer, offer) {
 // Creates a RTCPeerConnection to given remote user
 function createPeerConnection(user) {
     try {
-        var localConnection = new RTCPeerConnection();
+        var localConnection = new RTCPeerConnection({ 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }] });
         // Set association name
         localConnection.name = user;
 
