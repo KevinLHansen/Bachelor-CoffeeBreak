@@ -49,7 +49,6 @@ wsServer.on('connection', (connection) => {
 
     connection.on('message', (message) => {
         var data;
-        logs(message);
 
         // Filter non-JSON messages
         try {
@@ -75,9 +74,18 @@ wsServer.on('connection', (connection) => {
             case "joinRoom":
                 break;
 
-            default:
-                connection.send("Unknown command");
+            case "ping":
+                logs("PING");
+                sendTo(connection, {
+                    type: "ping"
+                });
                 break;
+
+            default:
+                connection.send({
+                    type: "error",
+                    message: "Uknown command: " + data.type
+                });
         }
     });
 

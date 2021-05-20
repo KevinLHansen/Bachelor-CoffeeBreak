@@ -2,7 +2,7 @@
     "name": "CoffeeBreak-Web",
     "version": "1.0.0",
     "description": "",
-    "main": "webserver.js",
+    "main": "server.js",
     "dependencies": {
         "@kubernetes/client-node": "^0.14.3",
         "express": "^4.17.1",

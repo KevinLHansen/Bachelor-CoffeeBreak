@@ -5,7 +5,6 @@ const WebSocketServer = require('ws').Server;
 const http_port = 80;
 const socket_port = 8082;
 
-const fs = require('fs');
 const path = require('path');
 const requestIp = require('request-ip');
 
@@ -115,6 +114,13 @@ wsServer.on('connection', (connection) => {
                     if (user != data.name) {
                         sendTo(users[user], data);
                     }
+                });
+                break;
+
+            case "ping":
+                logs("PING");
+                sendTo(connection, {
+                    type: "ping"
                 });
                 break;
 

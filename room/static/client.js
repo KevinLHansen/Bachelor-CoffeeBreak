@@ -52,6 +52,8 @@ webSocket = new WebSocket(`${url}`);
 
 webSocket.onopen = () => {
     log("Client connected to WebSocket");
+    // Start pinging the socket to prevent automatic termination
+    pingSocket();
 };
 
 webSocket.onclose = () => {
@@ -139,6 +141,10 @@ webSocket.onmessage = (message) => {
                     peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
                 }
             });
+            break;
+
+        case "ping":
+            log("PING");
             break;
     }
 };
@@ -385,6 +391,15 @@ function getAvatar(name) {
         }
     });
     return avatarGet;
+}
+
+async function pingSocket() {
+    setTimeout(() => {
+        send({
+            type: "ping"
+        });
+        pingSocket();
+    }, 30000);
 }
 
 // Sends data to WebSocket
