@@ -1,31 +1,5 @@
-# Bachelor-CoffeeBreak
-## Deployment & Install
-### Building Docker Image
-Navigate to root project folder:  
-    ``docker build . -t benjaminhck/<name of build type>``  
-    tag for build is benjaminhck/coffeebreak-web OR benjamin/coffeebreak-proxy,  
-    dependant on the build type.  
-    
-### Running the docker image
-Example:  
-``docker run --rm -p 8080:8080/tcp benjamin/coffeebreak-web:latest``
+# CoffeeBreak
+#### A Bachelor's Project by Kevin L. Hansen, Benjamin Klerens & Rasmus Stamm
+CoffeeBreak is a generic RTC web application, built on the concepts of WebRTC, for verbal communication with others. Besides the obvious feature of Real Time Communications, CoffeeBreak aims to alleviate the challenge of conducting multiple verbal conversations in one *call* by dynamically adjusting each participant's volume level according to their distance to, and from other participants within a 2D meeting room canvas. In a nutshell, participants **close to you** will be relatively **coherent**, while participants **far from your** will be relatively in-coherent.
 
---rm for automatic removal of container on exit
--p for publishing container ports to host port, syntax is   
-``<container-port>:<host-port>/<protocol>``
-
-### Pushing to DockerHub
-FOR COLLABORATORS ONLY  
-``docker push benjaminhck/<name of build type``  
-
-### Kubernetes
-Create the coffeebreak namespace  
-``kubectl create namespace coffeebreak``
-
-Apply the deployment file to the namespace  
-``kubectl -n coffeebreak apply -f deployment/deployment.yaml``   
-
-Useful command to get overall status of namespace  
-``kubectl -n coffeebreak get all -o wide``
-
-
+CoffeeBreak is built to be scalable through **Kubernetes**, where each *room*, when created by a user, is spun up as a new Pod. This means that, in theory, you could spin up an infinite amount of room Pods to alleviate a potential growing number of desired ongoing calls.
