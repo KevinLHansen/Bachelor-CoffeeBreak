@@ -1,10 +1,9 @@
-const serverIP = "localhost"; // for local testing
-//const serverIP = "212.130.120.89"; // for public testing
-const serverPort = "8082";
+const server_ip = window.location.host;
+const room_path = window.location.pathname;
+const server_port = "8082";
 
 // Variables
-
-var webSocket; // Websocket connection
+var webSocket;
 var username = ""; // Own username
 var room; // Current room
 var roomId; // Current room ID
@@ -20,19 +19,14 @@ var far = { threshold: 400, volume: 0 };
 
 var loginView = document.getElementById("loginView");
 var loginCard = document.getElementById("loginCard");
-var roomSelectCard = document.getElementById("roomSelectCard");
 var roomView = document.getElementById("roomView");
 
 var loginInput = document.getElementById("loginInput");
 var loginBtn = document.getElementById("loginBtn");
 
-var roomInput = document.getElementById("roomInput");
-var joinRoomBtn = document.getElementById("joinRoomBtn");
-var createRoomBtn = document.getElementById("createRoomBtn");
-var leaveRoomBtn = document.getElementById("leaveRoomBtn");
-
 var msgInput = document.getElementById("msgInput");
 var sendBtn = document.getElementById("sendBtn");
+var leaveRoomBtn = document.getElementById("leaveRoomBtn");
 
 var chatTxt = document.getElementById("chatTxt");
 
@@ -41,72 +35,55 @@ var usersTxt = document.getElementById("usersTxt");
 
 var audioContainer = document.getElementById("audioContainer");
 
+// WebRTC UserMedia initiation
+
+navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then((stream) => {
+    localStream = stream;
+}).catch((error) => {
+    log("getUserMedia error: " + error);
+});
 
 // WebSocket initiation
+var url = `wss://${server_ip}${room_path}ws`; // in-cluster
+//var url = `ws://${server_ip}:8082`; // locally
 
-if (!webSocket) { // Connect WebSocket if not already
-    var url = `${serverIP}:${serverPort}`;
-    log(`Client connecting to WebSocket: ${url}`);
-    webSocket = new WebSocket(`wss://${url}`);
-}
+log(`Client connecting to WebSocket: ${url}`);
+webSocket = new WebSocket(`${url}`);
 
 webSocket.onopen = () => {
     log("Client connected to WebSocket");
+    // Start pinging the socket to prevent automatic termination
+    pingSocket();
 };
+
+webSocket.onclose = () => {
+    log("WebSocket connection closed");
+}
 
 webSocket.onmessage = (message) => {
     // Parse message data from JSON
     var data = JSON.parse(message.data);
 
     switch (data.type) {
-        case "login": // Login attempt response
-            log("[login]: " + message.data);
 
+        case "login": // Login attempts response
+            log("[login]: " + message.data);
             if (data.success) {
                 log("User logged in: " + username);
+                // Update room variables
+                room = data.room;
                 // Update UI
-                updateUI("loggedin");
+                updateUI("inroom");
+                updateUsersUI();
+                // Send WebRTC offers
+                sendOffers();
             } else {
                 alert("Username taken");
             }
             break;
 
-        case "joinRoom":
-            log("[joinRoom]: " + message.data);
-
-            if (data.success) {
-                log("Room joined: " + data.roomId);
-                // Update room variables
-                room = data.room;
-                roomId = data.roomId;
-                // Update UI
-                updateUI("inroom");
-                // Send WebRTC offers
-                sendOffers();
-            } else {
-                alert("Invalid room name");
-            }
-            break;
-
-        case "createRoom":
-            log("[createRoom]: " + message.data);
-
-            if (data.success) {
-                log("Room created: " + data.roomId);
-                // Update room variables
-                room = data.room;
-                roomId = data.roomId;
-                // Update UI
-                updateUI("inroom");
-                updateUsersUI();
-            } else {
-                alert("Room name occupied");
-            }
-            break;
-
         case "roomUpdate":
             log("[roomUpdate]: " + message.data);
-
             room = data.room; // Update room state
 
             // Update UI
@@ -126,20 +103,19 @@ webSocket.onmessage = (message) => {
             }
             break;
 
-        case "chat": // Incoming chat
-            log("[chat]: " + message.data);
-
-            // Insert message in chatbox
-            //chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value; // Most recent on top
-            chatTxt.value = chatTxt.value + data.name + ": " + data.message + "\n"; // Most recent on bottom
-            break;
-
         case "canvasUpdate":
             log("[canvasUpdate]: " + message.data);
             if (room) {
                 room.avatars = data.avatars;
                 updateVolumes();
             }
+            break;
+
+        case "chat":
+            log("[chat]: " + message.data);
+            // Insert message in chatbox
+            //chatTxt.value = data.name + ": " + data.message + "\n" + chatTxt.value; // Most recent on top
+            chatTxt.value = chatTxt.value + data.name + ": " + data.message + "\n"; // Most recent on bottom
             break;
 
         case "offer":
@@ -166,10 +142,16 @@ webSocket.onmessage = (message) => {
                 }
             });
             break;
+
+        case "ping":
+            log("PING");
+            break;
     }
 };
 
-// Login button
+// UI HANDLING
+
+// Login (JOIN) button
 loginBtn.addEventListener("click", (event) => {
     if (loginInput.value) {
         username = loginInput.value;
@@ -178,58 +160,21 @@ loginBtn.addEventListener("click", (event) => {
             type: "login",
             canvas: { width: canvas.width, height: canvas.height }
         });
-
-        // WebRTC UserMedia initiation
-
-        navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then((stream) => {
-            localStream = stream;
-        }).catch((error) => {
-            log("getUserMedia error: " + error);
-        });
     }
-});
-
-// Join room button
-joinRoomBtn.addEventListener("click", (event) => {
-    if (roomInput.value) {
-        var roomId = roomInput.value;
-        log("Joining room: " + roomId);
-        // Send join room message to proxy server
-        send({
-            type: "joinRoom",
-            canvas: { width: canvas.width, height: canvas.height },
-            roomId: roomId
-        });
-    }
-});
+})
 
 // Leave room button
 leaveRoomBtn.addEventListener("click", (event) => {
-    leaveRoom();
+    window.location.pathname = "";
 });
 
-// Create room button
-createRoomBtn.addEventListener("click", (event) => {
-    if (roomInput.value) {
-        var roomId = roomInput.value;
-        log("Creating room: " + roomId);
-        // Send create room message to proxy server
-        send({
-            type: "createRoom",
-            canvas: { width: canvas.width, height: canvas.height },
-            roomId: roomId
-        });
-    }
-});
-
-// Message input
+// Chat message input
 msgInput.addEventListener("keyup", (event) => {
     if (event.key === "Enter") {
         event.preventDefault();
         if (msgInput.value) {
             var msg = msgInput.value;
             log("Sending chat message: " + msg);
-            // Send message to proxy server
             send({
                 type: "chat",
                 message: msg
@@ -242,7 +187,6 @@ msgInput.addEventListener("keyup", (event) => {
 // Add keyup eventListeners to elements which need them ([input, button])
 [
     [loginInput, loginBtn],
-    [roomInput, joinRoomBtn],
 
 ].forEach((element) => {
     element[0].addEventListener("keyup", (event) => {
@@ -321,17 +265,6 @@ function createPeerConnection(user) {
             var stream = event.streams[0];
             var audio = createAudioElement(user, stream);
 
-            // -- SMARTER SOLUTION (det duer ik) --
-            // var audioContext = new AudioContext();
-            // var src = audioContext.createMediaStreamSource(stream);
-
-            // var gainFilter = audioContext.createGain();
-            // gainFilter.gain.value = 0.5;
-            // // Connect filter to source
-            // src.connect(gainFilter);
-            // // Connect audio context destination to filter
-            // gainFilter.connect(audioContext.destination);
-
             audioContainer.appendChild(audio);
             updateVolumes();
         };
@@ -368,19 +301,11 @@ function setDisabled(elements, disabled) {
 // Updates client UI based on given state
 function updateUI(state) {
     switch (state) {
-        case "loggedin":
-            loginCard.style.display = "none";
-            roomView.style.display = "none";
-            loginView.style.display = "flex";
-            roomSelectCard.style.display = "flex";
-            audioContainer.innerHTML = "";
-            chatTxt.value = "";
-            break;
         case "inroom":
-            roomInput.value = "";
-            roomTxt.innerHTML = roomId;
+            loginCard.style.display = "none";
             loginView.style.display = "none";
             roomView.style.display = "flex";
+            roomTxt.innerHTML = window.location.pathname;
             break;
     }
 }
@@ -416,7 +341,7 @@ function updateVolumes() {
 
             // Get distance between avatars
             var distance = getDistance(ownAvatar, avatar);
-            //log("DIST: " + username + " <-> " + id + " = " + distance);
+            log("DIST: " + username + " <-> " + id + " = " + distance);
 
             // Adjust volume of audio element
             var volume;
@@ -468,22 +393,13 @@ function getAvatar(name) {
     return avatarGet;
 }
 
-// Leaves the current room
-function leaveRoom() {
-    send({
-        type: "leaveRoom"
-    });
-
-    roomId = undefined;
-    room = undefined;
-    // Close all peer connections
-    peerConnections.forEach((peerConnection) => {
-        peerConnection.close();
-    });
-    // Clear peer connections list
-    peerConnections = [];
-    // Update UI
-    updateUI("loggedin");
+async function pingSocket() {
+    setTimeout(() => {
+        send({
+            type: "ping"
+        });
+        pingSocket();
+    }, 30000);
 }
 
 // Sends data to WebSocket
@@ -492,7 +408,6 @@ function send(message) {
     webSocket.send(JSON.stringify(message));
 }
 
-// Simpler log function
 function log(data) {
     console.log(`[${(performance.now() / 1000).toFixed(2)}]  \t ${data}`);
 }

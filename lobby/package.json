@@ -1,20 +1,21 @@
 {
-    "name": "CoffeeBreak-WebSocket",
+    "name": "CoffeeBreak-Web",
     "version": "1.0.0",
     "description": "",
-    "main": "websocketserver.js",
+    "main": "server.js",
     "dependencies": {
-        "concurrently": "^6.0.2",
+        "@kubernetes/client-node": "^0.14.3",
         "express": "^4.17.1",
-        "ws": "^7.4.4"
+        "request-ip": "^2.1.3",
+        "ws": "^7.4.5"
     },
     "devDependencies": {
         "nodemon": "^2.0.7"
     },
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "start": "node websocketserver.js",
-        "devStart": "nodemon websocketserver.js"
+        "start": "node webserver.js",
+        "devStart": "nodemon webserver.js"
     },
     "author": "",
     "license": "ISC"

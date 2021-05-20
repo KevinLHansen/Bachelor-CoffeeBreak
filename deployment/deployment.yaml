@@ -2,88 +2,49 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: coffeebreak-ingress
+  name: ing-coffeebreak
   namespace: group2
   annotations:
-    nginx.ingress.kubernetes.io/default-backend: coffeebreak-web-service:8888
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true" # ALWAYS REDIRECTS TO HTTPS
+
 spec:
   rules:
     - host: group2.sempro0.uvm.sdu.dk
       http:
         paths:
-          - backend:
+          - path: /()(.*)
+            pathType: Prefix
+            backend:
               service:
-                name: coffeebreak-web-service
+                name: svc-lobby
                 port:
                   number: 8888
+            
+          - path: /ws()(.*)
             pathType: Prefix
-            path: /
-
-          - backend:
-              service: coffeebreak-web-service
-              port:
-                number: 8074
-              pathType: Prefix
-              path: /t
-              
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: coffeebreak-proxy-deployment
-  labels:
-    app: coffeebreak-proxy
-spec:
-  selector:
-      matchLabels:
-        app: coffeebreak-proxy
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app: coffeebreak-proxy
-    spec:
-      containers:
-      - name: coffeebreak-proxy
-        image: benjaminhck/coffeebreak-socket:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 8074
-        # livenessProbe:
-        #   httpGet:
-        #     path: /status
-        #     port: 5000
-        #   initialDelaySeconds: 3
-        #   periodSeconds: 3
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: coffeebreak-proxy-service
-spec:
-  type: LoadBalancer
-  selector:
-    app: coffeebreak-proxy
-  ports:
-     -  protocol: TCP
-        name: https
-        port: 8074
-        targetPort: 8074
+            backend:
+              service:
+                name: svc-lobby
+                port:
+                  number: 8082    
 
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  name: coffeebreak-web-pod
+  name: lobby
   labels:
-    app: coffeebreak-web-pod
+    app: lobby
 spec:
+  serviceAccountName: group2-user
   containers:
-    - name: coffeebreak-web-pod
-      image: benjaminhck/coffeebreak-web:latest
+    - name: con-lobby
+      image: benjaminhck/coffeebreak-lobby:latest
       ports:
         - containerPort: 80
+        - containerPort: 8082
+      
       # readinessProbe:
       #   httpGet:
       #     path: /
@@ -96,17 +57,23 @@ spec:
       #     port: 8443
       #   initialDelaySeconds: 15
       #   periodSeconds: 20
+      
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: coffeebreak-web-service
+  name: svc-lobby
 spec:
   type: LoadBalancer
   selector:
-    app: coffeebreak-web-pod
+    app: lobby
   ports:
-     -  protocol: TCP
-        name: http
-        port: 8888
-        targetPort: 80         
+    - protocol: TCP
+      name: web
+      port: 8888
+      targetPort: 80
+
+    - protocol: TCP
+      name: socket
+      port: 8082
+      targetPort: 8082
