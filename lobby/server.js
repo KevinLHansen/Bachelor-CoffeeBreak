@@ -62,9 +62,9 @@ wsServer.on('connection', (connection) => {
         switch (data.type) {
             case "createRoom":
                 logs("createRoom");
-                createRoomPod(data.roomName);
-                createRoomService(data.roomName);
-                addIngressPath(data.roomName);
+
+                onCreateRoom(data, connection);
+
                 break;
 
             case "deleteRoom":
@@ -96,8 +96,38 @@ async function onDeleteRoom(data) {
     });
 }
 
+async function onCreateRoom(data, connection) {
+    var success;
+    try {
+        var res = await createRoomPod(data.roomName);
+    } catch (err) {
+        console.log(err.response.body);
+    }
+
+    if (res) {
+        // Room Pod creation successful
+        logs("Created Pod: room-" + data.roomName);
+        success = true;
+        // Create Service and Ingress paths
+        try {
+            createRoomService(data.roomName);
+            addIngressPath(data.roomName);
+        } catch (err) {
+            console.log(err.response.body);
+        }
+    } else {
+        success = false;
+    }
+    // Notify client of result
+    sendTo(connection, {
+        type: "createRoom",
+        roomName: data.roomName,
+        success: success
+    });
+}
+
 async function createRoomPod(roomName) {
-    k8sCoreApi.createNamespacedPod(namespace, {
+    return k8sCoreApi.createNamespacedPod(namespace, {
         apiVersion: "v1",
         kind: "Pod",
         metadata: {
@@ -118,17 +148,11 @@ async function createRoomPod(roomName) {
                 }]
             }]
         }
-    }).then((res) => {
-        logs("Created Pod: room-" + roomName);
-        console.log("statusCode: " + res.response.statusCode);
-    }).catch((err) => {
-        console.log(err);
     });
 }
 
 async function createRoomService(roomName) {
-    logs("createService:");
-    k8sCoreApi.createNamespacedService(namespace, {
+    return k8sCoreApi.createNamespacedService(namespace, {
         apiVersion: 'v1',
         kind: 'Service',
         metadata: {
@@ -149,16 +173,10 @@ async function createRoomService(roomName) {
                 targetPort: 8082
             }]
         }
-    }).then((res) => {
-        logs("Created Service: svc-" + roomName)
-        console.log("statusCode: " + res.response.statusCode);
-    }).catch((err) => {
-        console.log(err);
     });
 }
 
 async function addIngressPath(roomName) {
-    logs("patchIngress:");
     // Build the patches
     const patch = [];
     // Path for WebServer
@@ -202,12 +220,7 @@ async function addIngressPath(roomName) {
         }
     };
 
-    k8sNetworkApi.patchNamespacedIngress(ingressName, namespace, patch, undefined, undefined, undefined, undefined, options).then((res) => {
-        logs("Added Ingress paths for room " + roomName);
-        console.log("statusCode: " + res.response.statusCode);
-    }).catch((err) => {
-        console.log(err);
-    });
+    return k8sNetworkApi.patchNamespacedIngress(ingressName, namespace, patch, undefined, undefined, undefined, undefined, options);
 }
 
 async function removeIngressPath(index) {
@@ -239,6 +252,10 @@ function getPods() {
 }
 
 // Utility functions
+
+function sendTo(connection, message) {
+    connection.send(JSON.stringify(message));
+}
 
 function logw(data) {
     log("[W] " + data);
