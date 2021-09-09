@@ -5,4 +5,4 @@ CoffeeBreak is a generic RTC web application, built on the concepts of WebRTC, f
 CoffeeBreak is built to be scalable through **Kubernetes**, where each *room*, when created by a user, is spun up as a new Pod. This means that, in theory, you could spin up an infinite amount of room Pods to alleviate a potentially growing number of desired ongoing calls.
 
 
-The final **Project Report** which documents the entire process from start to finish can be found in repisitory root.
+The final **Project Report** which documents the entire process from start to finish can be found in repository root.
